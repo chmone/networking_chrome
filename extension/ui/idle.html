@@ -2,10 +2,15 @@
     <meta charset="utf-8"/>
     <link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
     <link as="style" href="https://fonts.googleapis.com/css2?display=swap&amp;family=Inter%3Awght%40400%3B500%3B700%3B900&amp;family=Noto+Sans%3Awght%40400%3B500%3B700%3B900" onload="this.rel='stylesheet'" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet" />
     <title>ConnectIQ - Idle Screen</title>
     <link href="data:image/x-icon;base64," rel="icon" type="image/x-icon"/>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <style>
+          .material-icons-outlined {
+            font-size: inherit;
+            line-height: inherit;
+          }
           .primary-bg {
             background-color: #dce8f3;
           }
@@ -19,37 +24,51 @@
             background-color: #60a5fa;}
         </style>
     </head>
-    <body style='font-family: Inter, "Noto Sans", sans-serif;'>
-    <div class="relative flex size-full min-h-screen flex-col primary-bg group/design-root overflow-x-hidden">
-    <div class="layout-container flex h-full grow flex-col items-center justify-center">
-    <div class="flex flex-col w-full max-w-md p-8 bg-white shadow-xl rounded-lg items-center text-center">
-    <div class="flex flex-col items-center gap-4 mb-8">
-    <!-- DEFAULT PROFILE IMAGE PLACEHOLDER - Will be replaced with dynamic profile image in future versions -->
-    <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full h-32 w-32 border-4 border-white shadow-md bg-gray-300 flex items-center justify-center">
-    <svg class="w-16 h-16 text-gray-500" fill="currentColor" viewBox="0 0 24 24">
-    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-    </svg>
-    </div>
-    <div class="flex flex-col items-center justify-center">
-    <p class="text-2xl font-bold primary-text">Your Profile</p>
-    <p class="text-base secondary-text">LinkedIn User</p>
-    </div>
-    </div>
-    <!-- GIPHY GIF INTEGRATION FROM MAIN ROOT -->
-    <div class="w-full aspect-[16/9] rounded-lg overflow-hidden mb-8 shadow-inner flex items-center justify-center">
-    <img src="giphy.gif" alt="Ready to Network Animation" class="w-full h-full object-cover"/>
-    </div>
-    <p class="text-lg secondary-text font-medium">
-                Ready to Network?
+    <body class="bg-slate-50" style='font-family: Inter, "Noto Sans", sans-serif;'>
+    <div class="relative flex size-full min-h-screen flex-col group/design-root overflow-x-hidden">
+      <div class="flex h-full grow flex-col items-center justify-center p-2 md:p-4">
+        <div class="layout-content-container flex flex-col w-full max-w-md bg-white shadow-lg rounded-xl overflow-hidden">
+          <div class="p-4 @container relative">
+            <div class="absolute top-4 right-4">
+              <div class="relative" id="profileDropdownMenuButtonIdle">
+                <button id="menuToggleButtonIdle"
+                  class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium py-1.5 px-3 rounded-md flex items-center">
+                  Menu
+                  <span class="material-icons-outlined ml-1" style="font-size: 16px;">arrow_drop_down</span>
+                </button>
+                <div id="menuDropdownIdle" class="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg py-1 z-10 hidden">
+                  <a id="navMyProfileLinkIdle" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100" href="#">My Profile</a>
+                  <a id="navSettingsLinkIdle" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100" href="#">Settings</a>
+                </div>
+              </div>
+            </div>
+            <div class="flex w-full flex-col items-center gap-4 mb-4">
+              <div class="relative">
+                <img id="userProfileImageIdle" class="aspect-square object-cover rounded-full border-4 border-white shadow-md" style="width: 120px; height: 120px;" src="" alt="User Profile Picture">
+              </div>
+              <div class="flex flex-col items-center justify-center">
+                <p id="userNameIdle" class="text-slate-800 text-2xl font-semibold leading-tight tracking-tight text-center">[Your Name]</p>
+                <p id="userHeadlineIdle" class="text-slate-500 text-sm font-normal leading-normal text-center mt-1">[Your Headline]</p>
+              </div>
+            </div>
+            <!-- GIPHY GIF INTEGRATION FROM MAIN ROOT -->
+            <div class="w-full rounded-lg overflow-hidden mb-6 flex items-center justify-center">
+              <img src="https://i.imgur.com/zU3v0QV.gif" alt="Ready to Network Animation" style="width: 120px; height: 120px; object-fit: cover;" id="idle-gif"/>
+            </div>
+            <div class="text-center mb-6">
+              <p class="text-lg secondary-text font-medium mb-2">
+                Ready to Branch Out?
               </p>
-    <p class="text-sm text-gray-500 mb-6">
-                Visit someone else's LinkedIn profile to start analyzing potential connections!
+              <p class="text-sm text-gray-500 mb-4">
+                Visit a LinkedIn profile to start analyzing potential connections!
               </p>
-    <button id="manualAnalysisButton" class="px-6 py-3 accent-bg text-white font-semibold rounded-lg shadow-md hover-accent-bg transition-colors duration-300">
-                Analyze My Profile Anyway
-              </button>
-    </div>
-    </div>
+              <a id="goToLinkedInButtonIdle" class="inline-block px-6 py-3 accent-bg text-white font-semibold rounded-lg shadow-md hover-accent-bg transition-colors duration-300" href="#">
+                Go to LinkedIn
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
     
     </body></html> 

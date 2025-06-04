@@ -1,0 +1,22 @@
+{
+  "gifs": {
+    "loading": [
+      "https://i.imgur.com/zU3v0QV.gif"
+    ],
+    "idle": [
+      "https://i.imgur.com/zU3v0QV.gif"
+    ]
+  },
+  "avatars": {
+    "random": [
+      "https://i.imgur.com/jeKxn7N.png",
+      "https://i.imgur.com/B5YRmn3.png",
+      "https://i.imgur.com/JA6drqX.png"
+    ],
+    "fallback": "https://i.imgur.com/jeKxn7N.png"
+  },
+  "placeholders": {
+    "profile": "https://i.imgur.com/jeKxn7N.png",
+    "loading": "https://i.imgur.com/zU3v0QV.gif"
+  }
+} 

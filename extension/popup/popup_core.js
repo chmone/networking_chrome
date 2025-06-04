@@ -215,30 +215,114 @@ function handleGetStartedClick() {
   });
 }
 
-const RANDOM_USER_AVATARS = [
-  'https://i.imgur.com/jeKxn7N.png',
-  'https://i.imgur.com/B5YRmn3.png',
-  'https://i.imgur.com/JA6drqX.png'
-];
+// Image management system
+let imageConfig = null;
+
+/**
+ * Loads the image configuration from images.json
+ */
+async function loadImageConfig() {
+  if (imageConfig) return imageConfig; // Already loaded
+  
+  try {
+    const response = await fetch('../ui/images.json');
+    imageConfig = await response.json();
+    console.log('Image configuration loaded:', imageConfig);
+    return imageConfig;
+  } catch (error) {
+    console.error('Failed to load image configuration:', error);
+    // Fallback to hardcoded values
+    imageConfig = {
+      gifs: {
+        loading: ['https://i.imgur.com/zU3v0QV.gif'],
+        idle: ['https://i.imgur.com/zU3v0QV.gif']
+      },
+      avatars: {
+        random: [
+          'https://i.imgur.com/jeKxn7N.png',
+          'https://i.imgur.com/B5YRmn3.png',
+          'https://i.imgur.com/JA6drqX.png'
+        ],
+        fallback: 'https://i.imgur.com/jeKxn7N.png'
+      }
+    };
+    return imageConfig;
+  }
+}
+
+/**
+ * Gets a random image from a category
+ * @param {string} category - Category like 'gifs.loading', 'avatars.random', etc.
+ * @returns {string} Random image URL
+ */
+function getRandomImage(category) {
+  if (!imageConfig) {
+    console.warn('Image config not loaded, using fallback');
+    return 'https://i.imgur.com/jeKxn7N.png';
+  }
+  
+  const categoryParts = category.split('.');
+  let images = imageConfig;
+  
+  for (const part of categoryParts) {
+    images = images[part];
+    if (!images) {
+      console.warn(`Category ${category} not found in image config`);
+      return imageConfig.placeholders?.profile || 'https://i.imgur.com/jeKxn7N.png';
+    }
+  }
+  
+  if (Array.isArray(images)) {
+    return images[Math.floor(Math.random() * images.length)];
+  } else {
+    return images;
+  }
+}
 
 /**
  * Sets a random profile avatar on the given image element.
  * @param {HTMLImageElement} imageElement - The <img> element to update.
  */
-function setProfileImageRandomAvatar(imageElement) {
+async function setProfileImageRandomAvatar(imageElement) {
   if (!imageElement) {
     console.warn('setProfileImageRandomAvatar called with no imageElement.');
     return;
   }
 
-  const getRandomAvatar = () => RANDOM_USER_AVATARS[Math.floor(Math.random() * RANDOM_USER_AVATARS.length)];
-  const randomAvatarUrl = getRandomAvatar();
+  await loadImageConfig();
+  const randomAvatarUrl = getRandomImage('avatars.random');
+  const fallbackUrl = getRandomImage('avatars.fallback');
 
   console.log(`Setting random avatar: ${randomAvatarUrl} for element:`, imageElement.id);
   imageElement.src = randomAvatarUrl;
   imageElement.onerror = () => {
-      console.warn(`Error loading random avatar: ${randomAvatarUrl}.`);
-      imageElement.alt = "Error loading avatar";
+      console.warn(`Error loading random avatar: ${randomAvatarUrl}, using fallback.`);
+      imageElement.src = fallbackUrl;
+      imageElement.alt = "Avatar fallback";
+  };
+}
+
+/**
+ * Sets a random GIF on the given image element.
+ * @param {HTMLImageElement} imageElement - The <img> element to update.
+ * @param {string} category - The gif category ('loading' or 'idle')
+ */
+async function setRandomGif(imageElement, category = 'loading') {
+  if (!imageElement) {
+    console.warn('setRandomGif called with no imageElement.');
+    return;
+  }
+
+  await loadImageConfig();
+  const randomGifUrl = getRandomImage(`gifs.${category}`);
+  const fallbackUrl = getRandomImage('placeholders.loading');
+
+  console.log(`Setting random ${category} gif: ${randomGifUrl} for element:`, imageElement.id);
+  imageElement.src = randomGifUrl;
+  imageElement.onerror = () => {
+      console.warn(`Error loading random gif: ${randomGifUrl}, using fallback.`);
+      imageElement.src = fallbackUrl;
+      imageElement.alt = "GIF fallback";
   };
 }
 
@@ -647,6 +731,12 @@ function populateIdleView(profileData) {
   const userHeadlineElement = document.getElementById('userHeadlineIdle');
   const userImageElement = document.getElementById('userProfileImageIdle');
   const goToLinkedInBtn = document.getElementById('goToLinkedInButtonIdle');
+  
+  // Set random idle gif
+  const idleGif = document.getElementById('idle-gif');
+  if (idleGif) {
+    setRandomGif(idleGif, 'idle');
+  }
 
   if (userNameElement && profileData.name) {
     userNameElement.textContent = profileData.name;
@@ -674,6 +764,59 @@ function populateIdleView(profileData) {
     }
   } else {
     console.warn('goToLinkedInButtonIdle element not found in idle.html');
+  }
+
+  // Setup menu dropdown functionality for idle view
+  const menuToggleButtonIdle = document.getElementById('menuToggleButtonIdle');
+  const menuDropdownIdle = document.getElementById('menuDropdownIdle');
+  if (menuToggleButtonIdle && menuDropdownIdle) {
+    menuToggleButtonIdle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      menuDropdownIdle.classList.toggle('hidden');
+      console.log('Menu dropdown toggled in idle view.');
+    });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!menuToggleButtonIdle.contains(e.target) && !menuDropdownIdle.contains(e.target)) {
+        menuDropdownIdle.classList.add('hidden');
+      }
+    });
+  }
+
+  const myProfileLinkIdle = document.getElementById('navMyProfileLinkIdle');
+  if (myProfileLinkIdle) {
+    myProfileLinkIdle.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (menuDropdownIdle) menuDropdownIdle.classList.add('hidden');
+      console.log('My Profile link clicked from idle view.');
+      if (userProfile) {
+        displayUserProfile(userProfile);
+      } else {
+        chrome.storage.local.get('userLinkedInProfileData', (items) => {
+          if (items.userLinkedInProfileData) {
+            userProfile = items.userLinkedInProfileData;
+            displayUserProfile(userProfile);
+          } else {
+            loadView('main');
+          }
+        });
+      }
+    });
+  }
+
+  const settingsLinkIdle = document.getElementById('navSettingsLinkIdle');
+  if (settingsLinkIdle) {
+    settingsLinkIdle.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (menuDropdownIdle) menuDropdownIdle.classList.add('hidden');
+      console.log('Settings link clicked from idle view.');
+      if (chrome.runtime.openOptionsPage) {
+        chrome.runtime.openOptionsPage();
+      } else {
+        console.warn('chrome.runtime.openOptionsPage is not available.');
+      }
+    });
   }
 }
 // NEW FUNCTION END
@@ -721,6 +864,9 @@ async function initializePopup() {
   targetProfileScrapedData = null;
   n8nScoreData = null;
   currentError = null;
+  
+  // Preload image configuration
+  await loadImageConfig();
 
   let items = {}; // Define items to store storage.local.get results
 
@@ -883,11 +1029,18 @@ async function analyzeTargetProfile(tabId, targetUrl) {
     await loadView('loading'); // Display loading screen
     console.log('Loading view displayed, proceeding with scraping...');
 
-    // Start progress bar animation after loading screen is displayed
+    // Start progress bar animation and set random gif after loading screen is displayed
     const loadingStartTime = Date.now();
     let actualLoadingDone = false;
     
     setTimeout(() => {
+      // Set random loading gif
+      const loadingGif = document.getElementById('loading-gif');
+      if (loadingGif) {
+        setRandomGif(loadingGif, 'loading');
+      }
+      
+      // Start progress bar animation
       const progressBar = document.getElementById('progress-bar');
       if (progressBar) {
         console.log('Starting progress bar animation...');
