@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>LinkedIn Insight Options</title>
+  <link rel="stylesheet" type="text/css" href="options.css">
+</head>
+
+<body>
+  <div class="container">
+    <h1>Options</h1>
+    <p>Optionally, provide your LinkedIn profile URL. This might be used for more personalized insights in future
+      versions.</p>
+
+    <label for="userProfileUrl">Your LinkedIn Profile URL (for LLM context - optional):</label>
+    <input type="url" id="userProfileUrl" name="userProfileUrl" placeholder="https://www.linkedin.com/in/yourprofile/">
+
+    <label for="n8nWebhookUrl">n8n Webhook URL (optional):</label>
+    <input type="url" id="n8nWebhookUrl" name="n8nWebhookUrl" placeholder="https://your.n8n.instance/webhook/your-path">
+
+    <button id="saveOptionsBtn">Save Options</button>
+    <div id="optionsStatusMessage"></div>
+
+    <hr>
+    <h2>My Saved LinkedIn Profile</h2>
+    <div id="myProfileStorageStatus">Loading...</div>
+    <button id="clearMyProfile">Clear My Saved Profile</button>
+  </div>
+  <script src="options.js"></script>
+</body>
+
+</html>

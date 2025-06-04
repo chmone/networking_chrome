@@ -1,0 +1,170 @@
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect" />
+  <link as="style"
+    href="https://fonts.googleapis.com/css2?display=swap&amp;family=Inter%3Awght%40400%3B500%3B600%3B700&amp;family=Noto+Sans%3Awght%40400%3B500%3B700%3B900"
+    onload="this.rel='stylesheet'" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet" />
+  <title>Stitch Design</title>
+  <link href="data:image/x-icon;base64," rel="icon" type="image/x-icon" />
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    .material-icons-outlined {
+      font-size: inherit;
+      line-height: inherit;
+    }
+
+    .score-circle {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .score-circle svg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+    }
+
+    .score-circle circle {
+      fill: none;
+      stroke-width: 10;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.5s ease-in-out, stroke 0.5s ease-in-out;
+    }
+
+    .score-circle .background-circle {
+      stroke: #e5e7eb;
+    }
+
+    .score-circle .progress-circle {
+      stroke-dasharray: 283;
+    }
+  </style>
+</head>
+
+<body class="bg-slate-50">
+  <div class="relative flex size-full min-h-screen flex-col group/design-root overflow-x-hidden"
+    style='font-family: Inter, "Noto Sans", sans-serif;'>
+    <div class="flex h-full grow flex-col items-center justify-center p-4 md:p-8">
+      <div class="layout-content-container flex flex-col w-full max-w-md bg-white shadow-lg rounded-xl overflow-hidden">
+        <div class="p-6 @container relative">
+          <div class="absolute top-4 right-4">
+            <div class="relative" id="profileDropdownMenuButton">
+              <button id="menuToggleButton"
+                class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium py-1.5 px-3 rounded-md flex items-center">
+                Menu
+                <span class="material-icons-outlined ml-1" style="font-size: 16px;">arrow_drop_down</span>
+              </button>
+              <div id="menuDropdown" class="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg py-1 z-10 hidden">
+                <a id="navMyProfileLink" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100" href="#">My
+                  Profile</a>
+                <a id="navSettingsLink" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
+                  href="#">Settings</a>
+              </div>
+            </div>
+          </div>
+          <div class="flex w-full flex-col items-center gap-6 mb-6">
+            <div class="relative">
+              <div id="targetProfileImage"
+                class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-28 border-4 border-white shadow-md"
+                style='background-image: url("https://via.placeholder.com/112");'>
+              </div>
+              <div class="absolute bottom-0 right-0 bg-blue-600 p-1.5 rounded-full text-white shadow-md">
+                <span class="material-icons-outlined" style="font-size: 16px;">link</span>
+              </div>
+            </div>
+            <div class="flex flex-col items-center justify-center">
+              <p id="targetProfileName"
+                class="text-slate-800 text-2xl font-semibold leading-tight tracking-tight text-center">[Target Name]</p>
+              <p id="targetProfileHeadline" class="text-slate-500 text-sm font-normal leading-normal text-center mt-1">
+                [Target Headline]</p>
+            </div>
+          </div>
+          <div class="mb-8 flex flex-col items-center">
+            <div class="score-circle mb-4">
+              <svg>
+                <circle class="background-circle" cx="60" cy="60" r="45"></circle>
+                <circle id="scoreProgressCircle" class="progress-circle" cx="60" cy="60" r="45"></circle>
+              </svg>
+              <span id="scoreValue" class="text-4xl font-bold text-slate-800">--</span>
+            </div>
+            <div>
+              <h4 class="text-slate-700 text-sm font-semibold leading-tight tracking-tight px-1 pb-1 text-center">Why
+                this score?</h4>
+              <ul id="scoreReasonsList"
+                class="text-slate-600 text-xs font-normal leading-relaxed list-disc list-inside space-y-1 pl-2">
+                <li>[Reason 1 placeholder]</li>
+              </ul>
+            </div>
+            <button id="scrapedInfoButton"
+              class="mt-6 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-4 rounded-lg shadow-md transition duration-150 ease-in-out">
+              View Scraped Information
+            </button>
+          </div>
+          <div id="scrapedDetailsSection" class="space-y-6 hidden">
+            <div>
+              <h3 class="text-slate-700 text-sm font-semibold leading-tight tracking-tight px-1 pb-2 flex items-center">
+                <span class="material-icons-outlined mr-2 text-slate-500" style="font-size: 20px;">description</span>
+                Summary (Scraped)
+              </h3>
+              <p id="targetSummary" class="text-slate-600 text-sm font-normal leading-relaxed px-1">[Target Summary]</p>
+            </div>
+            <div>
+              <h3 class="text-slate-700 text-sm font-semibold leading-tight tracking-tight px-1 pb-2 flex items-center">
+                <span class="material-icons-outlined mr-2 text-slate-500" style="font-size: 20px;">work_outline</span>
+                Experience (Scraped)
+              </h3>
+              <div id="targetExperienceContainer" class="space-y-3">
+                <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                  <p class="text-slate-800 text-sm font-medium leading-normal">[No experience data available]</p>
+                </div>
+              </div>
+            </div>
+            <div>
+              <h3 class="text-slate-700 text-sm font-semibold leading-tight tracking-tight px-1 pb-2 flex items-center">
+                <span class="material-icons-outlined mr-2 text-slate-500" style="font-size: 20px;">school</span>
+                Education (Scraped)
+              </h3>
+              <div id="targetEducationContainer" class="space-y-3">
+                <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                  <p class="text-slate-800 text-sm font-medium leading-normal">[No education data available]</p>
+                </div>
+              </div>
+            </div>
+            <div>
+              <h3 class="text-slate-700 text-sm font-semibold leading-tight tracking-tight px-1 pb-2 flex items-center">
+                <span class="material-icons-outlined mr-2 text-slate-500" style="font-size: 20px;">verified</span>
+                Licenses & Certifications (Scraped)
+              </h3>
+              <div id="targetLicensesContainer" class="space-y-3">
+                <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                  <p class="text-slate-800 text-sm font-medium leading-normal">[No licenses data available]</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="bg-slate-50 p-4 border-t border-slate-200 text-center">
+          <a id="viewFullProfileLink" class="text-sm text-blue-600 hover:text-blue-700 font-medium hover:underline" href="#">
+            View Full Profile on LinkedIn
+            <span class="material-icons-outlined ml-1"
+              style="font-size: 16px; vertical-align: middle;">open_in_new</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+
+</html>

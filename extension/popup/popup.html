@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>LinkedIn Insight</title>
+  <link rel="stylesheet" type="text/css" href="popup.css">
+</head>
+
+<body>
+  <div class="container">
+    <h1>LinkedIn Insight</h1>
+    <button id="scanProfileBtn">Scan Target Profile</button>
+    <button id="saveMyProfileBtn">Save This as My Profile</button>
+
+    <div id="profileDisplayArea" style="margin-top: 15px;">
+      <div class="data-section">
+        <h3>Name:</h3>
+        <p id="profileName">N/A</p>
+      </div>
+      <div class="data-section">
+        <h3>Headline:</h3>
+        <p id="profileHeadline">N/A</p>
+      </div>
+      <div class="data-section">
+        <h3>Summary:</h3>
+        <pre id="profileSummary">N/A</pre>
+      </div>
+      <div class="data-section">
+        <h3>Experience:</h3>
+        <div id="experiencesDisplay"></div>
+      </div>
+      <div class="data-section">
+        <h3>Education:</h3>
+        <div id="educationDisplay"></div>
+      </div>
+      <div class="data-section">
+        <h3>Licenses & Certifications:</h3>
+        <div id="licensesDisplay"></div>
+      </div>
+
+      <!-- Commenting out Skills section
+      <div class="data-section">
+        <h3>Skills:</h3>
+        <div id="skillsDisplay"></div>
+      </div>
+      -->
+    </div>
+
+    <div id="status" class="status-message" style="margin-top: 10px;"></div>
+    <div id="myProfileStatus" class="status-message"></div>
+    <div id="webhookStatus" class="status-message"></div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,122 @@
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect" />
+  <link as="style"
+    href="https://fonts.googleapis.com/css2?display=swap&amp;family=Inter%3Awght%40400%3B500%3B600%3B700%3B900&amp;family=Noto+Sans%3Awght%40400%3B500%3B700%3B900"
+    onload="this.rel='stylesheet'" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Icons" rel="stylesheet" />
+  <title>ConnectIQ - Welcome</title>
+  <link href="data:image/x-icon;base64," rel="icon" type="image/x-icon" />
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <style>
+    .primary-bg {
+      background-color: #0c7ff2;
+    }
+
+    .primary-text {
+      color: #0c7ff2;
+    }
+
+    .primary-border {
+      border-color: #0c7ff2;
+    }
+
+    .hover-primary-bg:hover {
+      background-color: #0a6ac9;
+    }
+  </style>
+</head>
+
+<body class="bg-gray-50" style='font-family: Inter, "Noto Sans", sans-serif;'>
+  <div class="relative flex size-full min-h-screen flex-col group/design-root overflow-x-hidden">
+    <div class="layout-container flex h-full grow flex-col">
+      <header
+        class="flex items-center justify-between whitespace-nowrap border-b border-solid border-gray-200 px-6 sm:px-10 py-4 bg-white shadow-sm">
+        <div class="flex items-center gap-3 text-slate-800">
+          <div class="size-8 text-[#0c7ff2]">
+            <svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+              <path
+                d="M36.7273 44C33.9891 44 31.6043 39.8386 30.3636 33.69C29.123 39.8386 26.7382 44 24 44C21.2618 44 18.877 39.8386 17.6364 33.69C16.3957 39.8386 14.0109 44 11.2727 44C7.25611 44 4 35.0457 4 24C4 12.9543 7.25611 4 11.2727 4C14.0109 4 16.3957 8.16144 17.6364 14.31C18.877 8.16144 21.2618 4 24 4C26.7382 4 29.123 8.16144 30.3636 14.31C31.6043 8.16144 33.9891 4 36.7273 4C40.7439 4 44 12.9543 44 24C44 35.0457 40.7439 44 36.7273 44Z"
+                fill="currentColor"></path>
+            </svg>
+          </div>
+          <h1 class="text-xl font-bold leading-tight tracking-tight text-slate-900">ConnectIQ</h1>
+        </div>
+        <div class="flex items-center gap-4">
+          <button aria-label="Help"
+            class="flex items-center justify-center rounded-full h-10 w-10 bg-gray-100 text-slate-700 hover:bg-gray-200 transition-colors">
+            <span class="material-icons text-2xl">help_outline</span>
+          </button>
+          <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border border-gray-300"
+            style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCVYZIpwXNw892bWOeS_y9ERKWOGZFtWtjqaS_sSYgWHTBB9bChoibfI-wUYGUlVf1DSEq5FTaqk4PjJLAKLwZ3nM-6TPIXF3Lt7kuCoY28-x6bCpzVOs-r2z-UIStlblZFN2fUunO5GUx_eBpJw-Qk6kKQV5VG6LVJu3B3G98SMivRcEjuV3RtQLwfJRr2k4beHznTxtv6FlBEAoKzbHZrfudImoLgoW15tcpzMxLUtcMAcwMafW2CWohEuHRrPvM8xj6OOknVt3k");'>
+          </div>
+        </div>
+      </header>
+      <main class="flex flex-1 justify-center items-center py-10 px-4 sm:px-6 lg:px-8">
+        <div class="bg-white shadow-xl rounded-xl p-8 sm:p-12 w-full max-w-lg">
+          <div class="text-center mb-8">
+            <h2 class="text-3xl font-bold text-slate-900 mb-2">Welcome to ConnectIQ</h2>
+            <p class="text-slate-600 text-base">
+              Unlock deeper insights into LinkedIn profiles. Assess networking relevance quickly and efficiently.
+            </p>
+          </div>
+          <div class="space-y-6">
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1" for="linkedin-url">LinkedIn Profile
+                URL</label>
+              <div class="relative">
+                <span class="material-icons absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">link</span>
+                <input
+                  class="form-input block w-full rounded-lg border-gray-300 shadow-sm focus:border-[#0c7ff2] focus:ring-[#0c7ff2] pl-10 pr-3 py-3 text-base placeholder-slate-400"
+                  id="linkedin-url" placeholder="e.g., linkedin.com/in/yourprofile" type="url" />
+              </div>
+            </div>
+            <div class="relative flex items-center py-2">
+              <div class="flex-grow border-t border-gray-300"></div>
+              <span class="flex-shrink mx-4 text-slate-500 text-sm">OR</span>
+              <div class="flex-grow border-t border-gray-300"></div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1" for="resume-upload">Upload Your
+                Resume</label>
+              <div
+                class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-[#0c7ff2] transition-colors">
+                <div class="space-y-1 text-center">
+                  <span class="material-icons text-5xl text-slate-400">cloud_upload</span>
+                  <div class="flex text-sm text-slate-600">
+                    <label
+                      class="relative cursor-pointer rounded-md font-medium primary-text hover:text-[#0a6ac9] focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-[#0c7ff2]"
+                      for="resume-file">
+                      <span>Upload a file</span>
+                      <input class="sr-only" id="resume-file" name="resume-file" type="file" />
+                    </label>
+                    <p class="pl-1">or drag and drop</p>
+                  </div>
+                  <p class="text-xs text-slate-500">PDF, DOC, DOCX up to 10MB</p>
+                </div>
+              </div>
+            </div>
+            <button
+              class="w-full flex items-center justify-center gap-2 rounded-lg h-12 px-6 primary-bg text-white text-base font-semibold shadow-md hover-primary-bg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0c7ff2] transition-all duration-150 ease-in-out"
+              type="submit">
+              <span class="material-icons">rocket_launch</span>
+              Get Started
+            </button>
+          </div>
+          <p class="mt-8 text-xs text-slate-500 text-center">
+            By using ConnectIQ, you agree to our <a class="font-medium primary-text hover:underline" href="#">Terms of
+              Service</a> and <a class="font-medium primary-text hover:underline" href="#">Privacy Policy</a>.
+          </p>
+        </div>
+      </main>
+      <footer class="py-6 px-6 sm:px-10 text-center border-t border-gray-200 bg-white">
+        <p class="text-sm text-slate-500">© 2024 ConnectIQ. All rights reserved.</p>
+      </footer>
+    </div>
+  </div>
+
+</body>
+
+</html>

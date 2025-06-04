@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LinkedIn Insight Settings</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="settings.css">
+</head>
+
+<body class="bg-gray-100 p-6">
+  <div class="container mx-auto max-w-2xl bg-white shadow-md rounded-lg p-8">
+    <h1 class="text-2xl font-bold text-gray-700 mb-6">Extension Settings</h1>
+
+    <!-- N8N Webhook URL -->
+    <div class="mb-6">
+      <label for="n8nWebhookUrl" class="block text-sm font-medium text-gray-700 mb-1">N8N Webhook URL:</label>
+      <input type="url" id="n8nWebhookUrl" name="n8nWebhookUrl"
+        class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+        placeholder="https://your-n8n-instance.com/webhook/...">
+      <p class="mt-1 text-xs text-gray-500">The full URL for your N8N webhook that processes profile data.</p>
+    </div>
+
+    <!-- User's LinkedIn Profile URL -->
+    <div class="mb-6">
+      <label for="userLinkedInUrl" class="block text-sm font-medium text-gray-700 mb-1">Your LinkedIn Profile
+        URL:</label>
+      <input type="url" id="userLinkedInUrl" name="userLinkedInUrl"
+        class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+        placeholder="https://www.linkedin.com/in/yourprofile/">
+      <p class="mt-1 text-xs text-gray-500">Your full LinkedIn profile URL for context when analyzing other profiles.
+      </p>
+    </div>
+
+    <!-- Auto-open Popup Setting -->
+    <div class="mb-6 flex items-center">
+      <input type="checkbox" id="settings_autoOpenPopup" name="settings_autoOpenPopup"
+        class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+      <label for="settings_autoOpenPopup" class="ml-2 block text-sm text-gray-900">Automatically open popup on LinkedIn
+        profiles</label>
+    </div>
+
+    <hr class="my-6">
+
+    <!-- Action Buttons -->
+    <div class="flex justify-between items-center">
+      <button id="saveSettingsButton"
+        class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+        Save Settings
+      </button>
+      <button id="clearProfileButton"
+        class="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+        Clear My Saved Profile
+      </button>
+    </div>
+    <p id="settingsStatus" class="mt-4 text-sm text-gray-600"></p>
+
+  </div>
+  <script src="settings.js"></script>
+</body>
+
+</html>
