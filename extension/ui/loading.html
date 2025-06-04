@@ -27,22 +27,28 @@
         console.log('Starting progress animation...');
         console.log('Progress bar element found:', progressBar);
         
-        // Start with 5% width to make it immediately visible
-        progressBar.style.width = '5%';
+        // Start with 1% width to make it immediately visible
+        progressBar.style.width = '1%';
+        console.log('Set initial width to 1%');
         
         // Animate to 100% over 2 seconds using JavaScript
         let startTime = Date.now();
+        const duration = 2000; // 2 seconds in milliseconds
+        
         animationInterval = setInterval(() => {
           const elapsed = Date.now() - startTime;
-          const progress = Math.min((elapsed / 2000) * 100, 100); // 2 seconds = 100%
+          const progress = Math.min((elapsed / duration) * 100, 100); // 2 seconds = 100%
+          
+          console.log(`Animation update: elapsed=${elapsed}ms, progress=${progress}%`);
           progressBar.style.width = progress + '%';
           
           if (progress >= 100) {
+            console.log('Animation complete, clearing interval');
             clearInterval(animationInterval);
           }
-        }, 50); // Update every 50ms for smooth animation
+        }, 100); // Update every 100ms for smoother animation
         
-        console.log('Progress animation started with JavaScript');
+        console.log('Progress animation started with JavaScript, duration:', duration);
       } else {
         console.error('Progress bar element not found!');
         console.log('All elements with progress-bar id:', document.querySelectorAll('#progress-bar'));
@@ -89,8 +95,8 @@
 </div>
 <h2 class="text-slate-800 text-xl font-semibold leading-tight mb-4">Calculating networking score...</h2>
 <p class="text-slate-600 text-sm font-normal leading-relaxed mb-8">Analyzing profile, this may take a few moments.</p>
-<div class="w-full h-6 bg-gray-300 rounded-full overflow-hidden border-2 border-gray-400" role="progressbar" aria-label="Analysis progress" aria-valuemin="0" aria-valuemax="100">
-<div id="progress-bar" class="h-full rounded-full" style="width: 0%; background-color: #0b80ee; border: 1px solid #0066cc;"></div>
+<div class="w-full h-3 rounded-full overflow-hidden" role="progressbar" aria-label="Analysis progress" aria-valuemin="0" aria-valuemax="100">
+<div id="progress-bar" class="h-full rounded-full transition-all duration-100" style="width: 1%; background-color: #0b80ee;"></div>
 </div>
 </div>
 </div>
