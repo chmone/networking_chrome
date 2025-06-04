@@ -32,6 +32,6 @@
   },
   "options_page": "settings/settings.html",
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' data: https:; img-src 'self' data: https:;"
+    "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' data: https:; img-src 'self' data: https://via.placeholder.com https://i.imgur.com https:;"
   }
 }

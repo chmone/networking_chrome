@@ -215,7 +215,30 @@ function handleGetStartedClick() {
   });
 }
 
-// NEW FUNCTION START
+// NEW FUNCTION TO HANDLE PROFILE IMAGE LOADING WITH TIMEOUT AND FALLBACK
+/**
+ * Sets the background image for a given div, with a timeout and fallback to local random avatars.
+ * @param {HTMLElement} imageDiv - The div element to set the background image on.
+ * @param {string} primaryUrl - The URL of the primary image to load.
+ * @param {number} [timeoutMs=2000] - Timeout in milliseconds.
+ */
+function setProfileImageWithTimeout(imageElement, primaryUrl, timeoutMs = 2000) {
+  if (!imageElement) {
+    console.warn('setProfileImageWithTimeout called with no imageElement.');
+    return;
+  }
+
+  // Use the first imgur image as default fallback
+  const fallbackUrl = 'https://i.imgur.com/jeKxn7N.png';
+
+  // Set the image source directly
+  const imageUrl = primaryUrl || fallbackUrl;
+  console.log(`Setting profile image: ${imageUrl} for element:`, imageElement.id);
+  
+  imageElement.src = imageUrl;
+}
+// END OF NEW FUNCTION
+
 /**
  * Populates the profile.html view with the given profile data.
  * @param {object} profileData - The scraped profile data.
@@ -229,7 +252,7 @@ function populateProfileView(profileData) {
   const nameEl = document.getElementById('profileName');
   const headlineEl = document.getElementById('profileHeadline');
   const summaryEl = document.getElementById('profileSummary');
-  const imageDiv = document.getElementById('profileImage');
+  const imageDiv = document.getElementById('profileImage'); // For user's own profile view
   const expContainer = document.getElementById('experienceContainer');
   const eduContainer = document.getElementById('educationContainer');
   const licContainer = document.getElementById('licensesContainer');
@@ -237,10 +260,11 @@ function populateProfileView(profileData) {
   if (nameEl) nameEl.textContent = profileData.name || '[Name not available]';
   if (headlineEl) headlineEl.textContent = profileData.headline || '[Headline not available]';
   if (summaryEl) summaryEl.textContent = profileData.summary || '[Summary not available]';
-  if (imageDiv && profileData.profileImageUrl) {
-    imageDiv.style.backgroundImage = `url(${profileData.profileImageUrl})`;
-  } else if (imageDiv) {
-    imageDiv.style.backgroundImage = 'url(https://via.placeholder.com/112)'; // Default placeholder
+  
+  // Updated image handling logic
+  if (imageDiv) {
+    const primaryUrl = profileData.profileImageUrl;
+    setProfileImageWithTimeout(imageDiv, primaryUrl);
   }
 
   // Populate Experience
@@ -343,7 +367,6 @@ function populateProfileView(profileData) {
     });
   }
 }
-// NEW FUNCTION END
 
 // NEW FUNCTION START
 /**
@@ -415,8 +438,11 @@ function populateScoreScreen(targetData, scoreInfo, isUserProfile = false) {
   if (targetHeadlineElement) {
     targetHeadlineElement.textContent = targetData.headline || '[Target Headline]';
   }
-  if (targetImageElement && targetData.profileImageUrl) {
-    targetImageElement.style.backgroundImage = `url("${targetData.profileImageUrl}")`;
+  
+  // Updated image handling logic for the profile image on the score screen
+  if (targetImageElement) {
+    const primaryUrl = targetData.profileImageUrl;
+    setProfileImageWithTimeout(targetImageElement, primaryUrl);
   }
 
   // Add special styling or text for user's own profile
@@ -716,13 +742,15 @@ async function initializePopup() {
  * @param {string} targetUrl - The URL of the target profile.
  */
 async function analyzeTargetProfile(tabId, targetUrl) {
-  console.log(`Starting target profile analysis for tab ${tabId}: ${targetUrl}`);
+  console.log(`Analyzing target profile: ${targetUrl} on tab ${tabId}`);
+  isLoading = true;
+  lastUserActionContext = { action: 'analyzeTargetProfile', data: { tabId, targetUrl } };
 
   try {
-    // Show loading screen
-    loadView('loading');
+    await loadView('loading'); // Display loading screen
+    console.log('Loading view displayed, proceeding with scraping...');
 
-    // Execute the LinkedIn scraper on the target tab
+    // 1. Inject the scraper to get target profile data
     console.log('Injecting LinkedIn scraper...');
     const injectionResults = await chrome.scripting.executeScript({
       target: { tabId: tabId },
