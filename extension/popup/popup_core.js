@@ -895,7 +895,7 @@ async function analyzeTargetProfile(tabId, targetUrl) {
         
         setTimeout(() => {
           progressBar.classList.add('progress-animated');
-          console.log('Progress bar animating from 5% to 95% over 4 seconds');
+          console.log('Progress bar animating smoothly from 5% to 99% over 4 seconds');
         }, 100);
       } else {
         console.error('Progress bar element not found in loading screen');
@@ -910,14 +910,7 @@ async function analyzeTargetProfile(tabId, targetUrl) {
       if (elapsedTime >= 2000 && actualLoadingDone) {
         clearInterval(checkCompletion);
         
-        // Final push to 100%
-        const progressBar = document.getElementById('progress-bar');
-        if (progressBar) {
-          progressBar.classList.remove('progress-animated');
-          progressBar.style.width = '100%';
-          console.log('Analysis complete! Progress: 100%');
-        }
-        
+        console.log('Analysis complete! Loading finished smoothly at 99%');
         console.log('Loading complete (minimum 2s + API done) - showing results...');
         setTimeout(() => {
           displayScoreScreen(targetProfileData, scoreData);
