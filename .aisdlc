@@ -1,1 +1,149 @@
- 
+https://chmones.app.n8n.cloud/webhook/f6b44e83-72af-42fa-9b57-7b25d200e41b
+
+Great, some more notes:
+
+1. when the screen is on the users profile, id rather it not have the score and reasons stuff, it looks a bit junky. Maybe it could be a playful icon saying "get networking" or sometime similar, i added @giphy.gif, could you make a seprate "idle" screen that includes it?
+2. on the first Main page you have to scroll down to click "get started," I'd rather not have to scroll on any of the pages, can we remove the upload for now to make it a smaller size
+3. That Icon up top still doesn't work, can you just make it the image in @ui for now
+4. the drop down profile button should go to a users profile screen, not the scanner
+5. Can we make the format of the text in "View Scraped Information" and the profile screen cleaner? It looks like we copy pasted and it kept the old format. If the description has bullet points can we have our system recognize that and make our own, clean bullet points
+7. n8n isn't recieving the user profile when sent, all the values sent are defaults the snippit of the output is below, below that is the console log
+
+
+
+
+
+
+- I want to add a loading screen
+
+
+
+
+
+
+
+
+
+Additional Notes:
+
+1. I attached an image of the extension on my profile. It shouldn't have the score or anything, it should have a sort of idle thing- I put a gif in that should work well. I like th e"ready to Network" piece at the bottom of the profile page, maybe put that below the gif. You might want a whole new "idle" screen html file
+2. scrolling still exists on the main page, it also exists on the profile page, can we fix both of those. Lets shrink some of the items in the window to fix it
+3. I attached an image of what it looks like, the image at the top still isn't working and is just showing as a link icon, can we ake it the profile picture on linkedin? If not can we make it a generic profile picture? I saved the generic profile picture to 
+4, Also from the image you can see some extra space below the scan, can we clean that up, only adding space if the user clicks on "view scraped Information."
+
+
+
+
+
+COMPREHENSIVE PROJECT PROMPT FOR LINKEDIN INSIGHT V2.1 DEVELOPMENT
+(Updated with Missing V2 Features)
+PROJECT CONTEXT: LinkedIn Insight V2.1 Chrome Extension
+Current State: You're working on LinkedIn Insight V2.1, a LinkedIn Chrome extension that scrapes LinkedIn profiles and provides networking scores using N8N webhooks and LLM analysis. The project is located at /c:/Users/Cam/OneDrive/Documents/Projects/networking_chrome/extension/.
+Previous Project Status: The linkedin-insight-v2-ui-and-score project in /doing/ folder is FUNCTIONALLY COMPLETE and should be moved to DONE. All AI-SDLC phases (01-idea through 06-tasks) were manually completed for V2.
+AI-SDLC Context: For V2.1, you will go through the manual AI-SDLC process to systematically address multiple critical issues and improvements identified after V2 completion.
+CURRENT V2 ARCHITECTURE & FUNCTIONALITY
+The extension has complete V2 architecture with restructured directories:
+Apply to .aisdlc
+Existing UI Components:
+✅ loading.html - Animated loading screen with progress bar and pulsating icon
+✅ idle.html - User profile idle screen with "Ready to Network" messaging
+✅ Other core UI files (main.html, score_screen.html, profile.html, error.html)
+Current Functionality: Extension successfully scrapes LinkedIn profiles, sends data to N8N for LLM analysis, displays networking scores, and has functional UI with dropdown menus. All major V2 UX issues have been resolved.
+CRITICAL ISSUES TO ADDRESS IN V2.1
+1. SECURITY VULNERABILITIES (HIGHEST PRIORITY)
+Hardcoded N8N Webhook: Currently uses hardcoded webhook URL (https://chmones.app.n8n.cloud/webhook/f6b44e83-72af-42fa-9b57-7b25d200e41b) in popup_core.js, creating major security vulnerability
+Public Code Exposure: Chrome extension code is publicly readable, allowing webhook URL extraction and abuse
+Required: Implement proper rate limiting, authentication, and secure webhook handling
+Goal: Prepare for commercial product launch with enterprise-grade security
+2. MISSING V2 PRD FEATURES (From Original Specification)
+Resume Upload UI Element (AC-001.9):
+Missing: Visual resume upload element on ui/main.html that should be present but non-functional
+Required: Add upload UI component with "coming soon" or disabled state message
+Visual Score Representation (AC-007.3):
+Current: Basic numerical score display
+Missing: Visual aid like radial progress bar or gauge for score display
+Note: User mentioned this will "come later" but should be planned
+Input Validation (AC-010.4):
+Missing: Inline validation for URL formats in settings
+Required: Basic URL format validation for n8n webhook and LinkedIn profile URLs
+Enhanced Error Handling:
+Missing: Specific error type handling and detailed error messages as specified in PRD
+Required: Distinguish between scraping errors, network errors, and n8n response errors
+3. USER EXPERIENCE & UI IMPROVEMENTS (From .aisdlc)
+Implement Idle Screen Logic:
+Existing: idle.html with professional design, profile placeholder, and "Ready to Network" messaging
+Needed: Wire up idle.html to show when extension is on user's own profile (instead of score/reasons)
+Integrate with existing giphy.gif if desired or keep current clean design
+Fix Scrolling Issues:
+Remove scrolling from main page by removing upload functionality temporarily
+Fix scrolling on profile page by shrinking UI elements
+No page should require scrolling
+Profile Image Issues:
+Top icon still doesn't work (shows as link icon)
+Make it use LinkedIn profile picture, or fallback to generic profile picture
+Generic profile picture file mentioned as saved
+Navigation & Menu Fixes:
+Dropdown profile button should go to user's profile screen, not scanner
+Clean up extra space below scan button
+Only add space when user clicks "View Scraped Information"
+Text Formatting Improvements:
+Clean up format in "View Scraped Information" and profile screen
+Remove copy-paste formatting artifacts
+Implement proper bullet point recognition and clean formatting
+If description has bullet points, create clean, custom bullet points
+4. DATA TRANSMISSION ISSUES
+N8N User Profile Data: N8N isn't receiving user profile data properly
+All values sent are defaults instead of actual scraped user data
+Need to debug and fix user profile data transmission
+5. ENHANCE EXISTING LOADING FUNCTIONALITY
+Existing: loading.html with animated progress bar and professional design
+Needed: Improve integration and timing of loading screen throughout the application
+Ensure smooth transitions between loading and result screens
+6. PRD COMPLIANCE GAPS
+CSS Implementation: PRD specified embedded CSS via <style> tags and Tailwind CSS in each UI file - verify compliance
+Performance Requirements: Average time to display score after page load optimization
+Accessibility: Standard HTML best practices and proper ARIA attributes where needed
+Error Logging: Implement proper error tracking for debugging and improvement
+TECHNICAL SPECIFICATIONS
+Technology Stack:
+JavaScript (ES6+), HTML5, CSS3
+Chrome Storage API for persistence
+Tailwind CSS for styling
+Chrome Extension APIs (runtime, scripting, storage, tabs)
+Architecture Pattern: Modular Monolith within Chrome Extension context
+Key Files to Modify:
+popup/popup_core.js (main logic, security fixes, data transmission, idle screen integration)
+ui/main.html (add resume upload UI element)
+UI integration improvements (connecting idle.html logic)
+Various UI files for scrolling and spacing fixes
+Input validation in settings
+Potentially new authentication/security modules
+DEVELOPMENT APPROACH FOR V2.1
+Manual AI-SDLC Process: Go through systematic development phases (01-idea through 06-tasks)
+Security First: Address webhook security before UI improvements
+PRD Compliance: Ensure all originally specified features are implemented
+User Experience Focus: Create seamless, scroll-free interface with proper idle/loading states
+Clean Code: Follow established coding standards and modular architecture
+Test Thoroughly: Ensure all functionality works across different LinkedIn profile types
+SUCCESS CRITERIA FOR V2.1
+✅ Secure webhook implementation with rate limiting
+✅ All missing PRD features implemented (resume UI, validation, visual score)
+✅ No scrolling required on any screen
+✅ Proper idle screen integration for user's own profile
+✅ Enhanced loading screen functionality
+✅ Fixed profile image display
+✅ Clean text formatting throughout
+✅ Proper user profile data transmission to N8N
+✅ Commercial-ready security architecture
+✅ Full PRD compliance and feature completeness
+IMMEDIATE NEXT STEPS
+Mark Previous Project Complete: Move linkedin-insight-v2-ui-and-score from /doing/ to /done/
+Start Manual AI-SDLC Process: Begin V2.1 development phases
+PRD Gap Analysis: Identify and document all missing features from original specification
+Security Analysis: Prioritize webhook security and rate limiting implementation
+UI Integration: Connect existing idle.html and loading.html to popup logic
+Address Critical UX Issues: Fix scrolling, formatting, and navigation problems
+Product Intent: User intends to commercialize this extension and needs enterprise-grade security, complete PRD feature implementation, and professional UX before launch.
+Project Assets Ready: Both idle.html and loading.html are professionally designed and ready for integration into the extension logic.
+PRD Compliance: V2.1 must address the gap between what was specified in the original PRD and what was actually implemented, ensuring full feature completeness.
+
