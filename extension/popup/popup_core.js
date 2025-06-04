@@ -144,7 +144,7 @@ function handleGetStartedClick() {
     }
     console.log('Settings saved during initial setup with hardcoded N8N URL.');
     
-    loadView('loading'); // Show loading screen before navigation
+    loadView('initial_loading', () => setupAndAnimateLoadingScreen('loading')); // Pass simple key 'loading'
     
     // Continue with navigation and scraping...
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -1304,33 +1304,13 @@ async function analyzeTargetProfile(tabId, targetUrl) {
     await loadView('loading'); // Display loading screen
     console.log('Loading view displayed, proceeding with scraping...');
 
-    // Start progress bar animation and set random gif after loading screen is displayed
-    const loadingStartTime = Date.now();
-    let actualLoadingDone = false;
-    
-    setTimeout(() => {
-      // Set random loading gif
-      const loadingGif = document.getElementById('loading-gif');
-      if (loadingGif) {
-        setRandomGif(loadingGif, 'loading');
-      }
-      
-      // Start progress bar animation
-      const progressBar = document.getElementById('progress-bar');
-      if (progressBar) {
-        console.log('Starting progress bar animation...');
-        progressBar.style.width = '5%';
-        
-        setTimeout(() => {
-          progressBar.classList.add('progress-animated');
-          console.log('Progress bar animating smoothly from 5% to 99% over 4 seconds');
-        }, 100);
-      } else {
-        console.error('Progress bar element not found in loading screen');
-      }
-    }, 200);
+    // Start progress bar animation and set random gif using the new centralized function
+    setupAndAnimateLoadingScreen('loading'); // Pass simple key 'loading'
 
-    // Set up completion check
+    const loadingStartTime = Date.now(); // Keep for timing logic
+    let actualLoadingDone = false; // Keep for timing logic
+
+    // Set up completion check (this logic remains as it's specific to analyzeTargetProfile)
     const checkCompletion = setInterval(() => {
       const elapsedTime = Date.now() - loadingStartTime;
       
@@ -1346,7 +1326,7 @@ async function analyzeTargetProfile(tabId, targetUrl) {
       }
     }, 200);
     
-    // Function to mark analysis as complete
+    // Function to mark analysis as complete (this logic remains)
     const markAnalysisComplete = () => {
       console.log('Analysis marked as complete');
       actualLoadingDone = true;
@@ -1416,3 +1396,39 @@ async function analyzeTargetProfile(tabId, targetUrl) {
 document.addEventListener('DOMContentLoaded', initializePopup);
 
 console.log('popup_core.js loaded'); 
+
+/**
+ * Sets up the loading GIF and starts the progress bar animation for a loading screen.
+ * Assumes 'loading-gif' and 'progress-bar' elements exist in the currently loaded view.
+ * @param {string} gifSimpleKey - The simple key for the GIF category (e.g., 'loading', 'idle').
+ */
+function setupAndAnimateLoadingScreen(gifSimpleKey = 'loading') {
+  console.log(`setupAndAnimateLoadingScreen called with simple key: ${gifSimpleKey}`);
+  setTimeout(() => {
+    // Set random loading gif
+    const loadingGifElement = document.getElementById('loading-gif');
+    if (loadingGifElement) {
+      setRandomGif(loadingGifElement, gifSimpleKey); // Pass the simple key directly
+    } else {
+      console.warn('Could not find loading-gif element in setupAndAnimateLoadingScreen');
+    }
+
+    // Start progress bar animation
+    const progressBar = document.getElementById('progress-bar');
+    if (progressBar) {
+      console.log('Starting progress bar animation via setupAndAnimateLoadingScreen...');
+      progressBar.style.width = '5%'; // Reset to initial state
+      progressBar.classList.remove('progress-animated'); // Ensure it can be re-added if called again
+
+      // Force a reflow, might help ensure the class removal and width reset are applied before re-adding
+      void progressBar.offsetWidth;
+
+      setTimeout(() => {
+        progressBar.classList.add('progress-animated');
+        console.log('Progress bar animating smoothly from 5% to 99% over 4 seconds (triggered by setupAndAnimateLoadingScreen).');
+      }, 50); // Reduced this nested timeout, main one is 200ms.
+    } else {
+      console.error('Progress bar element not found in setupAndAnimateLoadingScreen');
+    }
+  }, 200); // Delay to ensure loading screen DOM is fully rendered
+} 

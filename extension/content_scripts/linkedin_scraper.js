@@ -1,83 +1,135 @@
 console.log("LinkedIn Insight Scraper content script loaded.");
 
 /**
+ * Helper function to wait for an element to appear in the DOM.
+ * @param {string} selector CSS selector for the element.
+ * @param {number} timeout Maximum time to wait in milliseconds.
+ * @param {number} interval Time between checks in milliseconds.
+ * @param {Document|Element} [context=document] The context to search within.
+ * @returns {Promise<Element|null>} A promise that resolves with the element or null if timed out.
+ */
+async function waitForElement(selector, timeout = 5000, interval = 500, context = document) {
+  console.log(`LinkedIn Insight Scraper: waitForElement - Waiting for selector: "${selector}" within context:`, context.nodeName);
+  return new Promise((resolve) => {
+    let elapsedTime = 0;
+    const timer = setInterval(() => {
+      const element = context.querySelector(selector);
+      if (element) {
+        console.log(`LinkedIn Insight Scraper: waitForElement - Element FOUND: "${selector}"`);
+        clearInterval(timer);
+        resolve(element);
+      } else {
+        elapsedTime += interval;
+        if (elapsedTime >= timeout) {
+          console.warn(`LinkedIn Insight Scraper: waitForElement - Timeout waiting for element: "${selector}"`);
+          clearInterval(timer);
+          resolve(null);
+        }
+      }
+    }, interval);
+  });
+}
+
+/**
  * Extracts profile data from the current LinkedIn profile page.
  * @returns {object|null} An object containing name, headline, and summary, or null if critical elements are missing.
  */
-function scrapeProfileData() {
+async function scrapeProfileData() {
   try {
-    console.log("Attempting to scrape profile data...");
-    const mainProfileSection = document.querySelector('.scaffold-layout');
+    console.log("LinkedIn Insight Scraper: scrapeProfileData() called.");
+    const mainProfileSection = await waitForElement('.scaffold-layout', 7000);
 
     if (!mainProfileSection) {
-      console.error("Could not identify main profile section. Ensure you are on a profile page.");
-      return { error: "Could not identify main profile section. Ensure you are on a profile page." };
+      console.error("LinkedIn Insight Scraper: Main profile section (.scaffold-layout) NOT FOUND after wait.");
+      return { error: "Could not identify main profile section. Ensure you are on a profile page and it has loaded." };
     }
-    // console.log("Main profile section identified:", mainProfileSection);
+    console.log("LinkedIn Insight Scraper: Main profile section (.scaffold-layout) FOUND.");
 
     const nameElement = mainProfileSection.querySelector('div > h1.text-heading-xlarge, div > h1[class*="text-heading"], section[class*="card"] h1');
     const name = nameElement ? nameElement.innerText.trim() : "Name not found";
-    // console.log("Name found:", name);
+    console.log(`LinkedIn Insight Scraper: Name element found: ${!!nameElement}, Name: "${name}"`);
 
     const headlineElement = mainProfileSection.querySelector('div.text-body-medium.break-words');
     const headline = headlineElement ? headlineElement.innerText.trim() : "Headline not found";
-    // console.log("Headline found:", headline);
+    console.log(`LinkedIn Insight Scraper: Headline element found: ${!!headlineElement}, Headline: "${headline}"`);
 
-    // Extract profile image URL
+    let location = "Location not found";
+    const locationSelectors = [
+      'div.text-body-medium.break-words + span.text-body-small.inline.break-words',
+      'span[class*="profile-topcard-location"]',
+      'div > span.text-body-small[class*="inline"]'
+    ];
+    for (const selector of locationSelectors) {
+      const locationElement = mainProfileSection.querySelector(selector);
+      if (locationElement && locationElement.innerText.trim()) {
+        location = locationElement.innerText.trim();
+        console.log(`LinkedIn Insight Scraper: Location FOUND with selector "${selector}": "${location}"`);
+        break;
+      }
+      console.log(`LinkedIn Insight Scraper: Location - trying selector "${selector}", Found: ${!!locationElement}`);
+    }
+    if (location === "Location not found") {
+      console.warn("LinkedIn Insight Scraper: Location was NOT FOUND after trying all selectors.");
+    }
+
     let profileImageUrl = "";
     const profileImageElement = mainProfileSection.querySelector('img.pv-top-card-profile-picture__image, img[class*="profile-picture"], img[data-delayed-url]');
     if (profileImageElement) {
       profileImageUrl = profileImageElement.src || profileImageElement.getAttribute('data-delayed-url') || "";
     }
-    // console.log("Profile image URL found:", profileImageUrl);
+    console.log(`LinkedIn Insight Scraper: Profile image element found: ${!!profileImageElement}, URL: "${profileImageUrl}"`);
 
-    // More robust summary scraping
     let summary = "Summary not found";
     const aboutSection = mainProfileSection.querySelector('section:has(> div#about)');
+    console.log(`LinkedIn Insight Scraper: About section found: ${!!aboutSection}`);
     if (aboutSection) {
-      // Try a few selectors for the summary
       const summarySelectors = [
-        'div[class*="inline-show-more-text"] > span[aria-hidden="true"]:not([class*="see-more-less-text"])', // Preferred
+        'div[class*="inline-show-more-text"] > span[aria-hidden="true"]:not([class*="see-more-less-text"])',
         'div.pv-shared-profile-section__description > div > span[aria-hidden="true"]',
-        'span[class*="visually-hidden"] ~ span', // General fallback
+        'span[class*="visually-hidden"] ~ span',
       ];
       for (const selector of summarySelectors) {
         const summarySpan = aboutSection.querySelector(selector);
+        console.log(`LinkedIn Insight Scraper: Summary - trying selector "${selector}" within About section, Found: ${!!summarySpan}`);
         if (summarySpan && summarySpan.innerText.trim()) {
           summary = summarySpan.innerText.trim();
+          console.log(`LinkedIn Insight Scraper: Summary FOUND with selector "${selector}": "${summary}"`);
           break;
         }
       }
+    } else {
+      console.log("LinkedIn Insight Scraper: About section (for summary) NOT found after wait.");
+    }
+    if (summary === "Summary not found") {
+      console.warn("LinkedIn Insight Scraper: Summary was NOT FOUND after trying all selectors.");
     }
 
-    // Scrape Experience
     const experiences = [];
-    const experienceSection = document.getElementById('experience')?.closest('section');
+    const experienceSection = await waitForElement('section:has(> div#experience)', 5000, 500, mainProfileSection);
+    console.log(`LinkedIn Insight Scraper: Experience section (id=experience) found: ${!!experienceSection}`);
     if (experienceSection) {
-      // console.log("Experience section found");
-      const experienceList = experienceSection.querySelector('ul');
+      const experienceList = await waitForElement('ul', 2000, 300, experienceSection);
+      console.log(`LinkedIn Insight Scraper: Experience list (ul) within section found: ${!!experienceList}`);
       if (experienceList) {
         const experienceItems = experienceList.querySelectorAll(':scope > li.artdeco-list__item');
-        experienceItems.forEach(item => {
-          // console.log("Processing experience item:", item);
+        console.log(`LinkedIn Insight Scraper: Found ${experienceItems.length} experience items (li.artdeco-list__item).`);
+        experienceItems.forEach((item, index) => {
+          console.log(`LinkedIn Insight Scraper: Processing Experience Item #${index + 1}`);
           let jobTitle = "N/A";
           let companyName = "N/A";
           let dates = "N/A";
           let description = "N/A";
           let location = "N/A";
 
-          // Job Title
           const titleEl = item.querySelector('div.display-flex.align-items-center.mr1.hoverable-link-text.t-bold span[aria-hidden="true"]');
           if (titleEl) {
             jobTitle = titleEl.innerText.trim();
           }
+          console.log(`LinkedIn Insight Scraper: Exp Item #${index + 1} - Title Element: ${!!titleEl}, Title: "${jobTitle}"`);
 
-          // Details container is often the 'a' tag itself if the title is within it, or the item itself
           const detailsContainer = titleEl?.closest('a') || item;
-
-          // Get all direct child spans with aria-hidden=true from the details container
-          // These often hold company, dates, location in order
           const detailSpans = detailsContainer.querySelectorAll(':scope > span[aria-hidden="true"], :scope > span > span[aria-hidden="true"]');
+          console.log(`LinkedIn Insight Scraper: Exp Item #${index + 1} - Found ${detailSpans.length} detailSpans for company/dates/location.`);
 
           let companyFound = false;
           let datesFound = false;
@@ -87,7 +139,6 @@ function scrapeProfileData() {
             const text = span.innerText.trim();
             if (!text) return;
 
-            // Company Name
             const parentSpan = span.parentElement;
             if (!companyFound &&
               parentSpan &&
@@ -96,33 +147,22 @@ function scrapeProfileData() {
               !parentSpan.classList.contains('t-black--light') &&
               text !== jobTitle) {
               companyName = text.split('·')[0].trim();
-              if (companyName) { // Ensure it's not an empty string after split
+              if (companyName) {
                 companyFound = true;
-                // console.log('COMPANY FOUND (primary):', companyName, span);
-                // return; // Don't return yet, let dates/location also try from other spans if needed
               }
             }
 
-            // Dates (often has a specific class or pattern)
             if (!datesFound && span.closest('.pvs-entity__caption-wrapper') && text.match(/\d{4}|Present|mos|yrs/i)) {
               dates = text;
               datesFound = true;
-              // console.log('DATES FOUND (caption):', dates, span);
-              // return; // Process other spans for location
             }
-            // Fallback for dates if not in caption-wrapper
             if (!datesFound && text.match(/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|Spring|Summer|Fall|Winter|Q[1-4])\s\d{4}\s-\s(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|Spring|Summer|Fall|Winter|Q[1-4]|Present)\s\d{4}|Present/i)) {
-              // Check it's not also a company name if company not yet found
               if (companyFound || (!companyFound && text.split('·')[0].trim() !== companyName)) {
                 dates = text;
                 datesFound = true;
-                // console.log('DATES FOUND (regex fallback):', dates, span);
-                // return; 
               }
             }
 
-            // Location (often the one after dates, in t-black--light, and doesn't repeat dates)
-            // Ensure it has a parent with t-black--light
             const locationParentSpan = span.parentElement;
             if (!locationFound && datesFound &&
               locationParentSpan &&
@@ -133,14 +173,12 @@ function scrapeProfileData() {
               !text.match(/\d{4}|Present|mos|yrs/i) &&
               text.length > 1) {
               location = text.split('·')[0].trim();
-              if (location) { // Ensure not empty
+              if (location) {
                 locationFound = true;
-                // console.log('LOCATION FOUND:', location, span);
               }
             }
           });
 
-          // Fallback for company name if primary method failed (e.g. if it was grabbed as description or title earlier)
           if (!companyFound && titleEl) {
             const anchorTag = titleEl.closest('a');
             if (anchorTag) {
@@ -155,276 +193,251 @@ function scrapeProfileData() {
                   companyPart !== dates && companyPart !== location) {
                   companyName = companyPart;
                   companyFound = true;
-                  // console.log('COMPANY FOUND (fallback A):', companyName);
                   break;
                 }
               }
             }
           }
-          // Final simple check if company name is identical to job title, if so, it's likely wrong.
           if (jobTitle !== "N/A" && jobTitle === companyName) {
-            // console.log('Company name was same as job title, resetting company.');
             companyName = "N/A";
           }
 
-          // Description
           const descriptionSelector = 'div[class*="inline-show-more-text"]:not([class*="--is-collapsed"]) span[aria-hidden="true"]:not([class*="see-more-less-text"]), ' +
-            'div.pvs-entity__description span[aria-hidden="true"], ' + // Common for descriptions
+            'div.pvs-entity__description span[aria-hidden="true"], ' +
             'div.pvs-entity__sub-components span[aria-hidden="true"]:not([class*="see-more-less-text"])';
           const descriptionEl = item.querySelector(descriptionSelector);
           if (descriptionEl) {
             const descText = descriptionEl.innerText.trim();
-            // Avoid using title/company/date/location as description
             if (descText !== jobTitle && descText !== companyName && descText !== dates && descText !== location && descText.length > 20) {
               description = descText.replace(/\n\nShow less$/, '').trim().replace(/\n\nSee less$/, '').trim();
             }
           }
 
-          console.log(`Experience: Title: ${jobTitle}, Company: ${companyName}, Dates: ${dates}, Location: ${location}, Desc Length: ${description.length}`);
+          console.log(`LinkedIn Insight Scraper: Exp Item #${index + 1} - Final Parsed - Title: "${jobTitle}", Company: "${companyName}", Dates: "${dates}", Location: "${location}", Desc Length: ${description.length}`);
           if (jobTitle !== "N/A" || companyName !== "N/A") {
             experiences.push({ title: jobTitle, company: companyName, dates: dates, location: location, description: description });
           }
         });
+      } else {
+        console.warn("LinkedIn Insight Scraper: Experience list (ul) NOT found within experience section.");
       }
     } else {
-      // console.log("Experience section not found or id 'experience' not on a direct child of a section.");
+      console.warn("LinkedIn Insight Scraper: Experience section (id=experience) NOT found.");
     }
-    // console.log("Final experiences:", experiences);
+    console.log("LinkedIn Insight Scraper: Final experiences array:", JSON.stringify(experiences));
 
-    const licenses = scrapeLicensesAndCertifications(mainProfileSection);
-    // const skills = scrapeSkills(mainProfileSection); // Commented out skills call
+    const licenses = await scrapeLicensesAndCertifications(mainProfileSection);
 
-    const education = scrapeEducation(mainProfileSection); // Add this call
+    const education = await scrapeEducation(mainProfileSection);
 
-    console.log("Scraped data:", { name, headline, summary, experiences, licenses, education, profileImageUrl, profileUrl: window.location.href });
-    return { name, headline, summary, experiences, licenses, education, profileImageUrl, profileUrl: window.location.href };
+    const finalScrapedData = { name, headline, location, summary, experiences, licenses, education, profileImageUrl, profileUrl: window.location.href };
+    console.log("LinkedIn Insight Scraper: Final scraped data object being returned:", JSON.stringify(finalScrapedData));
+    return finalScrapedData;
   } catch (e) {
-    console.error("Error during scraping in scrapeProfileData:", e);
+    console.error("LinkedIn Insight Scraper: CRITICAL ERROR in scrapeProfileData:", e);
     return { error: `Scraping failed: ${e.message}` };
   }
 }
 
-function scrapeLicensesAndCertifications(mainProfileSection) {
+async function scrapeLicensesAndCertifications(mainProfileSection) {
+  console.log("LinkedIn Insight Scraper: scrapeLicensesAndCertifications() called.");
   const licenses = [];
+  if (!mainProfileSection) {
+    console.warn("LinkedIn Insight Scraper: L&C - mainProfileSection is null, cannot scrape.");
+    return licenses;
+  }
   try {
     const licensesSection = mainProfileSection.querySelector('section:has(> div#licenses_and_certifications)');
+    console.log(`LinkedIn Insight Scraper: Licenses section found: ${!!licensesSection}`);
     if (licensesSection) {
-      const licenseElements = licensesSection.querySelectorAll('ul > li.artdeco-list__item');
+      const licenseList = licensesSection.querySelector('ul');
+      console.log(`LinkedIn Insight Scraper: L&C list (ul) found: ${!!licenseList}`);
+      if (licenseList) {
+        const licenseElements = licenseList.querySelectorAll(':scope > li.artdeco-list__item');
+        console.log(`LinkedIn Insight Scraper: Found ${licenseElements.length} license items.`);
+        licenseElements.forEach((licenseElement, index) => {
+          console.log(`LinkedIn Insight Scraper: Processing License Item #${index + 1}`);
+          let name = "N/A";
+          let issuingOrg = "N/A";
+          let issueDate = "N/A";
+          let credentialId = "N/A";
+          let credentialUrl = "N/A";
 
-      licenseElements.forEach(licenseElement => {
-        let name = "N/A";
-        let issuingOrg = "N/A";
-        let issueDate = "N/A";
-        let credentialId = "N/A";
-        let credentialUrl = "N/A";
+          const textContentDiv = licenseElement.querySelector('div.display-flex.flex-column.align-self-center.flex-grow-1');
+          if (!textContentDiv) {
+            console.log(`LinkedIn Insight Scraper: Lic Item #${index + 1} - textContentDiv NOT found.`);
+            return;
+          }
 
-        console.log("[L&C Scraper] Processing licenseElement:", licenseElement);
+          const nameElement = textContentDiv.querySelector('div[class*="t-bold"] > span[aria-hidden="true"], span[class*="t-bold"][aria-hidden="true"]');
+          if (nameElement) {
+            name = nameElement.innerText.trim();
+          }
+          console.log(`LinkedIn Insight Scraper: Lic Item #${index + 1} - Name Element: ${!!nameElement}, Name: "${name}"`);
 
-        const textContentDiv = licenseElement.querySelector('div.display-flex.flex-column.align-self-center.flex-grow-1');
-        console.log("[L&C Scraper] textContentDiv:", textContentDiv);
-        if (!textContentDiv) {
-          console.log("[L&C Scraper] textContentDiv not found for this item.");
-          return;
-        }
+          const orgElement = textContentDiv.querySelector(':scope > span.t-14.t-normal:not(.t-black--light) > span[aria-hidden="true"]');
+          if (orgElement && orgElement.innerText.trim() !== name) {
+            issuingOrg = orgElement.innerText.trim();
+          }
+          console.log(`LinkedIn Insight Scraper: Lic Item #${index + 1} - Org Element: ${!!orgElement}, Org: "${issuingOrg}"`);
 
-        // 1. Name
-        const nameElement = textContentDiv.querySelector('div[class*="t-bold"] > span[aria-hidden="true"], span[class*="t-bold"][aria-hidden="true"]');
-        if (nameElement) {
-          name = nameElement.innerText.trim();
-        }
-
-        // 2. Issuing Org - typically the first span.t-14.t-normal NOT in t-black--light group
-        const orgElement = textContentDiv.querySelector(':scope > span.t-14.t-normal:not(.t-black--light) > span[aria-hidden="true"]');
-        if (orgElement && orgElement.innerText.trim() !== name) {
-          issuingOrg = orgElement.innerText.trim();
-        }
-
-        // 3. Issue Date & 4. Credential ID
-        // These are usually in separate span.t-14.t-normal.t-black--light containers under textContentDiv
-        const detailBlocks = textContentDiv.querySelectorAll('span.t-14.t-normal.t-black--light'); // Removed :scope >
-        console.log("[L&C Scraper] Found detailBlocks:", detailBlocks.length, detailBlocks);
-        detailBlocks.forEach((block, index) => {
-          console.log(`[L&C Scraper] Processing detailBlock[${index}]:`, block);
-          const textSpan = block.querySelector(':scope > span[aria-hidden="true"], :scope > span.pvs-entity__caption-wrapper[aria-hidden="true"]');
-          console.log(`[L&C Scraper] textSpan in detailBlock[${index}]:`, textSpan);
-          if (textSpan) {
-            const text = textSpan.innerText.trim();
-            console.log(`[L&C Scraper] Text in textSpan[${index}]: "${text}"`);
-            if (issueDate === "N/A" && (text.toLowerCase().includes('issued') || text.match(/\d{4}/) || text.toLowerCase().match(/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\b/i))) {
-              issueDate = text;
-              console.log(`[L&C Scraper] Assigned to issueDate: "${issueDate}"`);
-            } else if (credentialId === "N/A" && text.toLowerCase().includes('credential id')) {
-              credentialId = text.replace(/credential id/ig, '').trim();
-              console.log(`[L&C Scraper] Assigned to credentialId: "${credentialId}"`);
+          const detailBlocks = textContentDiv.querySelectorAll('span.t-14.t-normal.t-black--light');
+          console.log(`LinkedIn Insight Scraper: Lic Item #${index + 1} - Found ${detailBlocks.length} detailBlocks`);
+          detailBlocks.forEach((block, index) => {
+            console.log(`LinkedIn Insight Scraper: Lic Item #${index + 1} - Processing detailBlock[${index}]:`, block);
+            const textSpan = block.querySelector(':scope > span[aria-hidden="true"], :scope > span.pvs-entity__caption-wrapper[aria-hidden="true"]');
+            console.log(`LinkedIn Insight Scraper: Lic Item #${index + 1} - textSpan in detailBlock[${index}]:`, textSpan);
+            if (textSpan) {
+              const text = textSpan.innerText.trim();
+              console.log(`LinkedIn Insight Scraper: Lic Item #${index + 1} - Text in textSpan[${index}]: "${text}"`);
+              if (issueDate === "N/A" && (text.toLowerCase().includes('issued') || text.match(/\d{4}/) || text.toLowerCase().match(/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\b/i))) {
+                issueDate = text;
+                console.log(`LinkedIn Insight Scraper: Lic Item #${index + 1} - Assigned to issueDate: "${issueDate}"`);
+              } else if (credentialId === "N/A" && text.toLowerCase().includes('credential id')) {
+                credentialId = text.replace(/credential id/ig, '').trim();
+                console.log(`LinkedIn Insight Scraper: Lic Item #${index + 1} - Assigned to credentialId: "${credentialId}"`);
+              }
             }
+          });
+
+          if (issuingOrg === "N/A" || issuingOrg === issueDate || issuingOrg === credentialId || (orgElement && orgElement.innerText.trim() === name)) {
+            const imgElement = licenseElement.querySelector('a[href*="/company/"] img[alt]');
+            if (imgElement) {
+              const altText = imgElement.alt.replace(/ logo$/i, '').trim();
+              if (altText && altText !== name) {
+                issuingOrg = altText;
+              } else if (issuingOrg === "N/A") {
+                issuingOrg = "N/A";
+              }
+            }
+          }
+
+          const credentialUrlElement = licenseElement.querySelector('a[href*="credly.com"], a[aria-label*="Show credential"]');
+          if (credentialUrlElement) {
+            credentialUrl = credentialUrlElement.href;
+          }
+
+          console.log(`LinkedIn Insight Scraper: Lic Item #${index + 1} - Final Parsed - Name: "${name}", Org: "${issuingOrg}", Date: "${issueDate}"`);
+          if (name !== "N/A") {
+            licenses.push({ name, issuingOrg, issueDate, credentialUrl, credentialId });
           }
         });
-
-        // Fallback for Issuing Org (ensure it doesn't pick up date/credential if they are valid)
-        if (issuingOrg === "N/A" || issuingOrg === issueDate || issuingOrg === credentialId || (orgElement && orgElement.innerText.trim() === name)) {
-          const imgElement = licenseElement.querySelector('a[href*="/company/"] img[alt]');
-          if (imgElement) {
-            const altText = imgElement.alt.replace(/ logo$/i, '').trim();
-            if (altText && altText !== name) {
-              issuingOrg = altText;
-            } else if (issuingOrg === "N/A") { // only revert to N/A if it was N/A and alt text was also not useful
-              issuingOrg = "N/A";
-            }
-          }
-        }
-
-        // 5. Credential URL
-        const credentialUrlElement = licenseElement.querySelector('a[href*="credly.com"], a[aria-label*="Show credential"]');
-        if (credentialUrlElement) {
-          credentialUrl = credentialUrlElement.href;
-        }
-
-        if (name !== "N/A") {
-          licenses.push({ name, issuingOrg, issueDate, credentialUrl, credentialId });
-        }
-      });
+      }
     }
   } catch (error) {
-    console.error("Error scraping licenses & certifications:", error);
+    console.error("LinkedIn Insight Scraper: Error scraping licenses & certifications:", error);
   }
+  console.log("LinkedIn Insight Scraper: Final licenses array:", JSON.stringify(licenses));
   return licenses;
 }
 
-/* // Commenting out the entire scrapeSkills function
-function scrapeSkills(mainProfileSection) {
-    const skills = [];
-    try {
-        const skillsSection = mainProfileSection.querySelector('section:has(> div#skills)');
-        if (skillsSection) {
-            console.log("[Skills Scraper] Skills section found:", skillsSection);
-            const skillElements = skillsSection.querySelectorAll('li.artdeco-list__item a[data-field="skill_card_skill_topic"] div[class*="t-bold"] > span[aria-hidden="true"]');
-            
-            if (skillElements.length === 0) {
-                 const alternativeSkillElements = skillsSection.querySelectorAll('li.artdeco-list__item div[class*="align-items-center"][class*="t-bold"] > span[aria-hidden="true"]');
-                 console.log("[Skills Scraper] Primary skill selector failed, found with alternative:", alternativeSkillElements.length);
-                 alternativeSkillElements.forEach(skillElement => {
-                    const skillName = skillElement.innerText.trim();
-                    if (skillName && !skills.includes(skillName)) {
-                        skills.push(skillName);
-                    }
-                });
-            } else {
-                 skillElements.forEach(skillElement => {
-                    const skillName = skillElement.innerText.trim();
-                    const cleanedSkillName = skillName.replace(/\u2060/g, '').trim();
-                    if (cleanedSkillName && !skills.includes(cleanedSkillName)) {
-                        skills.push(cleanedSkillName);
-                    }
-                });
-            }
-            console.log("[Skills Scraper] Found skills:", skills);
-        }
-    } catch (error) {
-        console.error("[Skills Scraper] Error scraping skills:", error);
-    }
-    return skills;
-}
-*/
-
-function scrapeEducation(mainProfileSection) {
+async function scrapeEducation(mainProfileSection) {
+  console.log("LinkedIn Insight Scraper: scrapeEducation() called.");
   const educationEntries = [];
+  if (!mainProfileSection) {
+    console.warn("LinkedIn Insight Scraper: Education - mainProfileSection is null, cannot scrape.");
+    return educationEntries;
+  }
   try {
     const educationSection = mainProfileSection.querySelector('section:has(> div#education)');
+    console.log(`LinkedIn Insight Scraper: Education section found: ${!!educationSection}`);
     if (educationSection) {
-      console.log("[Education Scraper] Education section found:", educationSection);
-      const items = educationSection.querySelectorAll('ul > li.artdeco-list__item');
-      items.forEach(item => {
-        const schoolNameElement = item.querySelector('div.display-flex.align-items-center.mr1.hoverable-link-text.t-bold > span[aria-hidden="true"]');
-        const schoolName = schoolNameElement ? schoolNameElement.innerText.trim() : "N/A";
+      const educationList = educationSection.querySelector('ul');
+      console.log(`LinkedIn Insight Scraper: Education list (ul) found: ${!!educationList}`);
+      if (educationList) {
+        const items = educationList.querySelectorAll(':scope > li.artdeco-list__item');
+        console.log(`LinkedIn Insight Scraper: Found ${items.length} education items.`);
+        items.forEach((item, index) => {
+          console.log(`LinkedIn Insight Scraper: Processing Education Item #${index + 1}`);
+          const schoolNameElement = item.querySelector('div.display-flex.align-items-center.mr1.hoverable-link-text.t-bold > span[aria-hidden="true"]');
+          const schoolName = schoolNameElement ? schoolNameElement.innerText.trim() : "N/A";
+          console.log(`LinkedIn Insight Scraper: Edu Item #${index + 1} - School Name Element: ${!!schoolNameElement}, School: "${schoolName}"`);
 
-        let degree = "N/A";
-        let fieldOfStudy = "N/A";
-        const degreeInfoElement = item.querySelector('span.t-14.t-normal > span[aria-hidden="true"]');
-        if (degreeInfoElement) {
-          const degreeInfoText = degreeInfoElement.innerText.trim();
-          // Attempt to parse Degree and Field of Study, e.g., "Bachelor of Business Administration - BBA, Management Information Systems, General"
-          // This parsing can be very specific to formats. A common pattern is "Degree Name - Acronym, Field of Study"
-          const parts = degreeInfoText.split(',');
-          if (parts.length > 1) {
-            const firstPart = parts[0].trim();
-            if (firstPart.includes(" - ")) { // e.g., Bachelor of Business Administration - BBA
-              degree = firstPart.split(" - ")[1] || firstPart.split(" - ")[0]; // Prefer acronym, else full name part
-              fieldOfStudy = parts.slice(1).join(',').trim();
+          let degree = "N/A";
+          let fieldOfStudy = "N/A";
+          const degreeInfoElement = item.querySelector('span.t-14.t-normal > span[aria-hidden="true"]');
+          if (degreeInfoElement) {
+            const degreeInfoText = degreeInfoElement.innerText.trim();
+            const parts = degreeInfoText.split(',');
+            if (parts.length > 1) {
+              const firstPart = parts[0].trim();
+              if (firstPart.includes(" - ")) {
+                degree = firstPart.split(" - ")[1] || firstPart.split(" - ")[0];
+                fieldOfStudy = parts.slice(1).join(',').trim();
+              } else {
+                degree = firstPart;
+                fieldOfStudy = parts.slice(1).join(',').trim();
+              }
             } else {
-              degree = firstPart; // Fallback if no acronym pattern
-              fieldOfStudy = parts.slice(1).join(',').trim();
+              degree = degreeInfoText;
             }
-          } else {
-            degree = degreeInfoText; // If no comma, assume it's all degree or all field of study
           }
-        }
+          console.log(`LinkedIn Insight Scraper: Edu Item #${index + 1} - Degree Info Element: ${!!degreeInfoElement}, Degree: "${degree}", Field: "${fieldOfStudy}"`);
 
-        const datesElement = item.querySelector('span.t-14.t-normal.t-black--light > span.pvs-entity__caption-wrapper[aria-hidden="true"]');
-        const dates = datesElement ? datesElement.innerText.trim() : "N/A";
+          const datesElement = item.querySelector('span.t-14.t-normal.t-black--light > span.pvs-entity__caption-wrapper[aria-hidden="true"]');
+          const dates = datesElement ? datesElement.innerText.trim() : "N/A";
+          console.log(`LinkedIn Insight Scraper: Edu Item #${index + 1} - Dates Element: ${!!datesElement}, Dates: "${dates}"`);
 
-        let description = "";
-        const descriptionElements = item.querySelectorAll('div.pvs-entity__sub-components div.inline-show-more-text span[aria-hidden="true"], div.pvs-entity__description span[aria-hidden="true"]');
-        descriptionElements.forEach((descEl, index) => {
-          const descText = descEl.innerText.trim();
-          if (descText) {
-            description += (index > 0 ? "\n" : "") + descText;
+          let description = "";
+          const descriptionElements = item.querySelectorAll('div.pvs-entity__sub-components div.inline-show-more-text span[aria-hidden="true"], div.pvs-entity__description span[aria-hidden="true"]');
+          descriptionElements.forEach((descEl, index) => {
+            const descText = descEl.innerText.trim();
+            if (descText) {
+              description += (index > 0 ? "\n" : "") + descText;
+            }
+          });
+          description = description.trim() || "N/A";
+
+          console.log(`LinkedIn Insight Scraper: Edu Item #${index + 1} - Final Parsed - School: "${schoolName}", Degree: "${degree}", Dates: "${dates}", Desc Length: ${description.length}`);
+          if (schoolName !== "N/A") {
+            educationEntries.push({ schoolName, degree, fieldOfStudy, dates, description });
           }
         });
-        description = description.trim() || "N/A";
-
-        if (schoolName !== "N/A") {
-          educationEntries.push({ schoolName, degree, fieldOfStudy, dates, description });
-        }
-      });
-      console.log("[Education Scraper] Found education entries:", educationEntries);
+      }
     }
   } catch (error) {
-    console.error("[Education Scraper] Error scraping education:", error);
+    console.error("LinkedIn Insight Scraper: Error scraping education:", error);
   }
+  console.log("LinkedIn Insight Scraper: Final education array:", JSON.stringify(educationEntries));
   return educationEntries;
 }
 
 // Listener for messages from the popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "scrapeProfile") {
-    // console.log("Scrape request received from popup.");
     const scrapedData = scrapeProfileData();
     if (scrapedData.error) {
       console.error("Error during scraping:", scrapedData.error);
       sendResponse({ error: scrapedData.error });
     } else if (scrapedData.name === "Name not found" && scrapedData.headline === "Headline not found" && scrapedData.summary === "Summary not found" && (!scrapedData.experiences || scrapedData.experiences.length === 0)) {
       const notProfileError = "Could not extract significant profile data. Ensure you are on a LinkedIn profile page and it has loaded completely.";
-      // console.warn(notProfileError);
       sendResponse({ error: notProfileError });
     } else {
-      // console.log("Scraping successful, sending data:", scrapedData);
       sendResponse({ data: scrapedData });
     }
-    return true; // Indicates that the response will be sent asynchronously
+    return true;
   } else {
     console.log("LinkedIn Insight: Unknown action received", request.action)
     sendResponse({ error: "Unknown action" });
   }
-  return true; // Required for asynchronous sendResponse
+  return true;
 });
 
-// console.log("LinkedIn Scraper content script loaded and listening."); 
-
 // For chrome.scripting.executeScript compatibility - return scraped data directly
-(() => {
-  console.log("LinkedIn scraper executing via chrome.scripting.executeScript");
-  const scrapedData = scrapeProfileData();
+(async () => {
+  console.log("LinkedIn Insight Scraper: IIFE executing via chrome.scripting.executeScript");
+  const scrapedData = await scrapeProfileData();
+  console.log("LinkedIn Insight Scraper: IIFE received from scrapeProfileData():", JSON.stringify(scrapedData));
 
-  // Return the data in the same validation format as the message listener
   if (scrapedData.error) {
-    console.error("Error during scraping:", scrapedData.error);
+    console.error("LinkedIn Insight Scraper: IIFE - Error flag found in scrapedData:", scrapedData.error);
     return { error: scrapedData.error };
   } else if (scrapedData.name === "Name not found" && scrapedData.headline === "Headline not found" && scrapedData.summary === "Summary not found" && (!scrapedData.experiences || scrapedData.experiences.length === 0)) {
     const notProfileError = "Could not extract significant profile data. Ensure you are on a LinkedIn profile page and it has loaded completely.";
-    console.warn(notProfileError);
+    console.warn("LinkedIn Insight Scraper: IIFE - Not enough significant data found:", notProfileError);
     return { error: notProfileError };
   } else {
-    console.log("Scraping successful, returning data:", scrapedData);
-    return scrapedData; // Return data directly for executeScript
+    console.log("LinkedIn Insight Scraper: IIFE - Scraping successful, returning data.");
+    return scrapedData;
   }
 })(); 
