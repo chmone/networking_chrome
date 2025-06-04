@@ -348,21 +348,44 @@ function populateProfileView(profileData) {
   const eduContainer = document.getElementById('educationContainer');
   const licContainer = document.getElementById('licensesContainer');
 
-  if (profileNameEl && profileData.name) profileNameEl.textContent = cleanText(profileData.name);
-  if (profileHeadlineEl && profileData.headline) profileHeadlineEl.textContent = cleanText(profileData.headline);
-  if (profileLocationEl && profileData.location) profileLocationEl.textContent = cleanText(profileData.location);
-  if (summaryEl && profileData.summary) summaryEl.textContent = cleanText(profileData.summary);
+  if (profileNameEl) {
+    if (profileData.name) profileNameEl.textContent = cleanText(profileData.name);
+    else {
+      profileNameEl.textContent = "[Profile Name]";
+      console.warn('populateProfileView: profileData.name is missing, using fallback.');
+    }
+  }
+  if (profileHeadlineEl) {
+    if (profileData.headline) profileHeadlineEl.textContent = cleanText(profileData.headline);
+    else {
+      profileHeadlineEl.textContent = "[Profile Headline]";
+      console.warn('populateProfileView: profileData.headline is missing, using fallback.');
+    }
+  }
+  if (profileLocationEl) {
+    if (profileData.location) profileLocationEl.textContent = cleanText(profileData.location);
+    else {
+      profileLocationEl.textContent = "[Location]";
+      // console.warn('populateProfileView: profileData.location is missing, using fallback.'); // Location is optional, less critical to warn
+    }
+  }
+  if (summaryEl) {
+    if (profileData.summary) summaryEl.textContent = cleanText(profileData.summary);
+    else {
+      summaryEl.textContent = "[Summary not available]";
+      console.warn('populateProfileView: profileData.summary is missing, using fallback.');
+    }
+  }
 
   if (profileImageEl) {
-    // Assuming setProfileImageRandomAvatar handles fallbacks and is still desired for the main profile view.
-    // If actual profile image URL is available in profileData.profilePicture, use that.
     if (profileData.profilePicture) {
       profileImageEl.src = profileData.profilePicture;
-      profileImageEl.onerror = () => { // Fallback if the provided picture fails
+      profileImageEl.onerror = () => { 
         console.warn('Error loading provided profile picture, using random avatar.');
         setProfileImageRandomAvatar(profileImageEl);
       };
     } else {
+      console.warn('populateProfileView: profileData.profilePicture is missing, using random avatar as fallback.');
       setProfileImageRandomAvatar(profileImageEl); 
     }
   }
