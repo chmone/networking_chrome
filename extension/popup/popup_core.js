@@ -6,10 +6,10 @@ const HARDCODED_N8N_URL = 'https://chmones.app.n8n.cloud/webhook/f6b44e83-72af-4
 // --- State Management (Conceptual from rules/system.md 6.C) ---
 let currentView = 'loading'; // Default view
 let userProfile = null;
-let targetProfileScrapedData = null;
-let n8nScoreData = null;
+let targetProfileScrapedData = null; // Will be reset on popup init
+let n8nScoreData = null; // Will be reset on popup init
 let isLoading = false;
-let currentError = null;
+let currentError = null; // Will be reset on popup init
 let appSettings = { n8nUrl: HARDCODED_N8N_URL, userLinkedInUrl: '', autoOpen: true }; // Use hardcoded N8N URL
 let lastUserActionContext = null; // For error recovery "Try Again" functionality
 
@@ -215,29 +215,32 @@ function handleGetStartedClick() {
   });
 }
 
-// NEW FUNCTION TO HANDLE PROFILE IMAGE LOADING WITH TIMEOUT AND FALLBACK
+const RANDOM_USER_AVATARS = [
+  'https://i.imgur.com/jeKxn7N.png',
+  'https://i.imgur.com/B5YRmn3.png',
+  'https://i.imgur.com/JA6drqX.png'
+];
+
 /**
- * Sets the background image for a given div, with a timeout and fallback to local random avatars.
- * @param {HTMLElement} imageDiv - The div element to set the background image on.
- * @param {string} primaryUrl - The URL of the primary image to load.
- * @param {number} [timeoutMs=2000] - Timeout in milliseconds.
+ * Sets a random profile avatar on the given image element.
+ * @param {HTMLImageElement} imageElement - The <img> element to update.
  */
-function setProfileImageWithTimeout(imageElement, primaryUrl, timeoutMs = 2000) {
+function setProfileImageRandomAvatar(imageElement) {
   if (!imageElement) {
-    console.warn('setProfileImageWithTimeout called with no imageElement.');
+    console.warn('setProfileImageRandomAvatar called with no imageElement.');
     return;
   }
 
-  // Use the first imgur image as default fallback
-  const fallbackUrl = 'https://i.imgur.com/jeKxn7N.png';
+  const getRandomAvatar = () => RANDOM_USER_AVATARS[Math.floor(Math.random() * RANDOM_USER_AVATARS.length)];
+  const randomAvatarUrl = getRandomAvatar();
 
-  // Set the image source directly
-  const imageUrl = primaryUrl || fallbackUrl;
-  console.log(`Setting profile image: ${imageUrl} for element:`, imageElement.id);
-  
-  imageElement.src = imageUrl;
+  console.log(`Setting random avatar: ${randomAvatarUrl} for element:`, imageElement.id);
+  imageElement.src = randomAvatarUrl;
+  imageElement.onerror = () => {
+      console.warn(`Error loading random avatar: ${randomAvatarUrl}.`);
+      imageElement.alt = "Error loading avatar";
+  };
 }
-// END OF NEW FUNCTION
 
 /**
  * Populates the profile.html view with the given profile data.
@@ -263,8 +266,7 @@ function populateProfileView(profileData) {
   
   // Updated image handling logic
   if (imageDiv) {
-    const primaryUrl = profileData.profileImageUrl;
-    setProfileImageWithTimeout(imageDiv, primaryUrl);
+    setProfileImageRandomAvatar(imageDiv);
   }
 
   // Populate Experience
@@ -441,8 +443,7 @@ function populateScoreScreen(targetData, scoreInfo, isUserProfile = false) {
   
   // Updated image handling logic for the profile image on the score screen
   if (targetImageElement) {
-    const primaryUrl = targetData.profileImageUrl;
-    setProfileImageWithTimeout(targetImageElement, primaryUrl);
+    setProfileImageRandomAvatar(targetImageElement);
   }
 
   // Add special styling or text for user's own profile
@@ -634,6 +635,78 @@ async function displayScoreScreen(targetData, scoreInfo) {
 }
 // NEW FUNCTIONS END
 
+// NEW FUNCTION START (Skeleton for populating idle.html)
+/**
+ * Populates the idle.html view with the user's profile information.
+ * @param {object} profileData - The user's own LinkedIn profile data.
+ */
+function populateIdleView(profileData) {
+  console.log('Populating idle view with user data:', profileData);
+
+  const userNameElement = document.getElementById('userNameIdle');
+  const userHeadlineElement = document.getElementById('userHeadlineIdle');
+  const userImageElement = document.getElementById('userProfileImageIdle');
+  const goToLinkedInBtn = document.getElementById('goToLinkedInButtonIdle');
+
+  if (userNameElement && profileData.name) {
+    userNameElement.textContent = profileData.name;
+  }
+  if (userHeadlineElement && profileData.headline) {
+    userHeadlineElement.textContent = profileData.headline;
+  }
+  if (userImageElement) {
+    // Use the existing function to set the image, which handles fallbacks
+    setProfileImageRandomAvatar(userImageElement);
+  } else {
+    console.warn('userProfileImageIdle element not found in idle.html');
+  }
+
+  if (goToLinkedInBtn) {
+    // Remove any existing listeners to prevent duplicates if this view is reloaded
+    goToLinkedInBtn.replaceWith(goToLinkedInBtn.cloneNode(true));
+    const newgoToLinkedInBtn = document.getElementById('goToLinkedInButtonIdle'); // Re-fetch after clone
+    if (newgoToLinkedInBtn) {
+        newgoToLinkedInBtn.addEventListener('click', (e) => {
+        e.preventDefault(); // Prevent default anchor action
+        chrome.tabs.create({ url: 'https://www.linkedin.com' });
+        console.log('Navigating to LinkedIn from idle screen.');
+      });
+    }
+  } else {
+    console.warn('goToLinkedInButtonIdle element not found in idle.html');
+  }
+}
+// NEW FUNCTION END
+
+// Helper function to normalize LinkedIn URLs for comparison
+function normalizeLinkedInUrl(url) {
+  if (!url) return '';
+  try {
+    const newUrl = new URL(url);
+    let pathname = newUrl.pathname;
+    // Remove trailing slash if it exists and it's not the only character
+    if (pathname.length > 1 && pathname.endsWith('/')) {
+      pathname = pathname.substring(0, pathname.length - 1);
+    }
+    // Reconstruct the significant part: hostname (without www) + pathname
+    // Convert hostname to lowercase for case-insensitive comparison
+    let hostname = newUrl.hostname.toLowerCase();
+    if (hostname.startsWith('www.')) {
+      hostname = hostname.substring(4);
+    }
+    return hostname + pathname;
+  } catch (e) {
+    // If URL is invalid, try a simpler regex-based normalization for basic cases
+    // (e.g. if a non-URL string was somehow passed)
+    console.warn('normalizeLinkedInUrl: Could not parse URL, using basic normalization:', url, e);
+    let simpleUrl = url.replace(/^https?:\/\//, '').replace(/^www\./, '');
+    if (simpleUrl.includes('?')) simpleUrl = simpleUrl.substring(0, simpleUrl.indexOf('?'));
+    if (simpleUrl.includes('#')) simpleUrl = simpleUrl.substring(0, simpleUrl.indexOf('#'));
+    if (simpleUrl.length > 1 && simpleUrl.endsWith('/')) simpleUrl = simpleUrl.slice(0, -1);
+    return simpleUrl.toLowerCase();
+  }
+}
+
 // --- Initialization ---
 
 /**
@@ -641,10 +714,20 @@ async function displayScoreScreen(targetData, scoreInfo) {
  * Determines the initial view to load based on stored settings and current context.
  */
 async function initializePopup() {
-  console.log('Initializing popup...');
+  console.log('Popup initializing... Resetting transient state.');
+  isLoading = true; // Set loading true at the very start
+
+  // Reset potentially stale data from previous popup session
+  targetProfileScrapedData = null;
+  n8nScoreData = null;
+  currentError = null;
+
+  let items = {}; // Define items to store storage.local.get results
+
   // 1. Load settings from chrome.storage.local
+  console.log('Step 1: Loading data from storage...');
   try {
-    const items = await chrome.storage.local.get([
+    items = await chrome.storage.local.get([
       'appSettings',
       'userLinkedInProfileData',
       'profileCleared',
@@ -655,85 +738,133 @@ async function initializePopup() {
 
     if (chrome.runtime.lastError) {
       console.error("Error loading from storage:", chrome.runtime.lastError.message);
-      // Fallback to default appSettings (already initialized)
     } else {
+      console.log('Data loaded from storage:', items);
       if (items.appSettings) {
         appSettings = items.appSettings;
-        console.log('Loaded appSettings:', appSettings);
       }
       if (items.userLinkedInProfileData) {
         userProfile = items.userLinkedInProfileData;
-        console.log('Loaded userProfile data from storage.');
-      }
-
-      // Check for profile cleared flag
-      if (items.profileCleared) {
-        console.log('Profile was cleared, transitioning to setup.');
-        // Clear the flag and force setup mode
-        chrome.storage.local.remove('profileCleared');
-        userProfile = null; // Ensure we go to setup
-      }
-
-      // Check for target profile analysis context
-      if (items.contextReady && items.targetProfileUrl && items.targetProfileTabId) {
-        console.log('Target profile analysis context detected:', items.targetProfileUrl);
-
-        // Check if user is fully set up for analysis
-        if (appSettings.n8nUrl && userProfile) {
-          console.log('User is set up, initiating target profile analysis...');
-
-          // Store context for error recovery
-          lastUserActionContext = {
-            action: 'analyzeTarget',
-            data: {
-              targetUrl: items.targetProfileUrl,
-              tabId: items.targetProfileTabId
-            }
-          };
-
-          // Clear the context flags to prevent re-triggering
-          chrome.storage.local.remove(['contextReady']);
-
-          // Start the target analysis flow
-          await analyzeTargetProfile(items.targetProfileTabId, items.targetProfileUrl);
-          return; // Exit early, analyzeTargetProfile handles the view loading
-        } else {
-          console.log('User not fully set up, cannot analyze target. Clearing context and proceeding to setup.');
-          chrome.storage.local.remove(['contextReady', 'targetProfileUrl', 'targetProfileTabId']);
-        }
       }
     }
   } catch (error) {
     console.error('Exception loading data from chrome.storage.local:', error);
-    // Fallback to default appSettings (already initialized)
   }
 
-  // 2. Determine initial view (existing logic)
-  if (!appSettings.n8nUrl || !userProfile) { // If not fully set up (missing n8n URL or own profile)
-    console.log('User not fully set up or missing own profile. Loading main.html for setup.');
+  // 2. Handle profile cleared flag
+  console.log('Step 2: Checking for profileCleared flag...');
+  if (items.profileCleared) {
+    console.log('Profile was cleared, transitioning to setup. Clearing flag.');
+    await chrome.storage.local.remove('profileCleared');
+    userProfile = null;
+  }
+
+  // 3. If not fully set up, load 'main' and return
+  console.log('Step 3: Checking setup status (N8N URL and userProfile)...');
+  if (!appSettings.n8nUrl || !userProfile) {
+    console.log('User not fully set up. Loading main.html.');
     loadView('main', () => {
       const getStartedBtn = document.getElementById('getStartedButton');
       if (getStartedBtn) {
-        // Avoid adding multiple listeners if this callback runs multiple times for the same view.
-        // A more robust solution might involve a dedicated function to set up view-specific listeners.
         if (!getStartedBtn.getAttribute('listenerAttached')) {
           getStartedBtn.addEventListener('click', handleGetStartedClick);
-          getStartedBtn.setAttribute('listenerAttached', 'true'); // Mark that listener is attached
+          getStartedBtn.setAttribute('listenerAttached', 'true');
         }
-      } else {
-        console.error('Get Started button not found after loading main.html');
       }
-
-      // Pre-populate n8n URL if it exists
       const n8nUrlInput = document.getElementById('n8n-url');
-      if (n8nUrlInput && appSettings.n8nUrl) {
-        n8nUrlInput.value = appSettings.n8nUrl;
-      }
+      if (n8nUrlInput && appSettings.n8nUrl) n8nUrlInput.value = appSettings.n8nUrl;
+      const linkedInUrlInput = document.getElementById('linkedin-url');
+      if (linkedInUrlInput && appSettings.userLinkedInUrl && !userProfile) linkedInUrlInput.value = appSettings.userLinkedInUrl;
     });
-  } else { // User is set up (has n8n URL and their own profile)
-    console.log('User is set up. Displaying user profile.');
-    displayUserProfile(userProfile);
+    isLoading = false; return;
   }
+  console.log('User is set up. Proceeding...');
+
+  // PRIORITY STEP: Check current tab FIRST to determine if we should show idle
+  console.log('Step 4 (PRIORITY): Checking current tab URL for idle conditions...');
+  let activeTab = null;
+  let currentUrl = '';
+  try {
+    [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    currentUrl = activeTab ? activeTab.url : '';
+    console.log('Current tab URL:', currentUrl);
+
+    const normalizedCurrentUrl = normalizeLinkedInUrl(currentUrl);
+    const normalizedUserLinkedInUrl = normalizeLinkedInUrl(appSettings.userLinkedInUrl);
+
+    console.log('=== URL COMPARISON DEBUG ===');
+    console.log('Raw current URL:', currentUrl);
+    console.log('Raw user stored URL:', appSettings.userLinkedInUrl);
+    console.log('Normalized current URL:', normalizedCurrentUrl);
+    console.log('Normalized user URL:', normalizedUserLinkedInUrl);
+    console.log('URLs match:', normalizedCurrentUrl === normalizedUserLinkedInUrl);
+
+    const isOwnProfile = userProfile && normalizedCurrentUrl && normalizedUserLinkedInUrl && (normalizedCurrentUrl === normalizedUserLinkedInUrl);
+    const isLinkedInFeed = normalizedCurrentUrl.includes('linkedin.com/feed');
+    const isLinkedInHomePage = normalizedCurrentUrl === 'linkedin.com' || normalizedCurrentUrl === 'linkedin.com/home';
+    
+    console.log(`PRIORITY CHECK - isOwnProfile=${isOwnProfile}, isFeed=${isLinkedInFeed}, isHome=${isLinkedInHomePage}`);
+
+    // PRIORITY: If this is own profile, feed, or homepage - show idle immediately
+    if (isOwnProfile || isLinkedInFeed || isLinkedInHomePage) {
+      console.log(`PRIORITY: Showing idle screen. Reason: isOwnProfile=${isOwnProfile}, isFeed=${isLinkedInFeed}, isHome=${isLinkedInHomePage}`);
+      loadView('idle', () => populateIdleView(userProfile));
+      isLoading = false; 
+      return; // Exit immediately, don't check auto-analysis context
+    }
+  } catch (e) {
+    console.error('Error in priority URL check:', e);
+    // Continue to other checks if URL check fails
+  }
+
+  // 5. Check for analysis context from background.js (auto-triggered analysis) - ONLY for target profiles
+  console.log('Step 5: Checking for auto-analysis context from storage...');
+  if (items.contextReady && items.targetProfileUrl && items.targetProfileTabId) {
+    console.log(`Auto-analysis context found in storage: URL=${items.targetProfileUrl}, TabID=${items.targetProfileTabId}`);
+    
+    let activeTabForContextCheck = null;
+    try {
+      [activeTabForContextCheck] = await chrome.tabs.query({ active: true, currentWindow: true });
+    } catch (e) {
+      console.error('Error querying active tab for context check:', e);
+    }
+
+    if (activeTabForContextCheck && activeTabForContextCheck.id === items.targetProfileTabId && activeTabForContextCheck.url === items.targetProfileUrl) {
+      console.log('Context from storage matches active tab. Proceeding with auto-analysis.');
+      lastUserActionContext = {
+        action: 'analyzeTarget',
+        data: { targetUrl: items.targetProfileUrl, tabId: items.targetProfileTabId }
+      };
+      await chrome.storage.local.remove(['contextReady', 'targetProfileUrl', 'targetProfileTabId']);
+      console.log('Cleared consumed auto-analysis context from storage.');
+      await analyzeTargetProfile(items.targetProfileTabId, items.targetProfileUrl);
+      isLoading = false; return;
+    } else {
+      console.log('Context from storage is STALE (does not match active tab/URL). Clearing context.');
+      await chrome.storage.local.remove(['contextReady', 'targetProfileUrl', 'targetProfileTabId']);
+      console.log('Cleared stale auto-analysis context from storage.');
+    }
+  } else {
+    console.log('No valid auto-analysis context found in storage.');
+  }
+
+  // 6. Final check for manual analysis or default to idle
+  console.log('Step 6: Final URL analysis for manual target analysis or default idle...');
+  const normalizedCurrentUrl = normalizeLinkedInUrl(currentUrl);
+  const normalizedUserLinkedInUrl = normalizeLinkedInUrl(appSettings.userLinkedInUrl);
+  const isOwnProfile = userProfile && normalizedCurrentUrl && normalizedUserLinkedInUrl && (normalizedCurrentUrl === normalizedUserLinkedInUrl);
+  const isTargetProfilePage = normalizedCurrentUrl.includes('linkedin.com/in/') && !isOwnProfile;
+
+  if (isTargetProfilePage && activeTab) {
+    console.log('Current tab is a TARGET LinkedIn profile page. Initiating manual analysis for:', currentUrl);
+    lastUserActionContext = { action: 'analyzeTarget', data: { targetUrl: currentUrl, tabId: activeTab.id } };
+    await analyzeTargetProfile(activeTab.id, currentUrl);
+  } else {
+    console.log('DEFAULT: Showing idle screen for all other cases. URL:', currentUrl);
+    loadView('idle', () => populateIdleView(userProfile));
+  }
+  
+  isLoading = false;
 }
 
 /**
@@ -746,9 +877,17 @@ async function analyzeTargetProfile(tabId, targetUrl) {
   isLoading = true;
   lastUserActionContext = { action: 'analyzeTargetProfile', data: { tabId, targetUrl } };
 
+  let targetProfileData, scoreData;
+
   try {
-    await loadView('loading'); // Display loading screen
+    await loadView('loading'); // Display loading screen with 3-second minimum
     console.log('Loading view displayed, proceeding with scraping...');
+
+    // Set up callback for when loading screen is ready to complete
+    window.onLoadingScreenComplete = () => {
+      console.log('Loading screen completed, showing results...');
+      displayScoreScreen(targetProfileData, scoreData);
+    };
 
     // 1. Inject the scraper to get target profile data
     console.log('Injecting LinkedIn scraper...');
@@ -768,7 +907,7 @@ async function analyzeTargetProfile(tabId, targetUrl) {
       throw new Error(scrapedResult.error);
     }
 
-    const targetProfileData = scrapedResult;
+    targetProfileData = scrapedResult;
     console.log('Target profile scraped:', targetProfileData);
 
     // Store scraped target data
@@ -791,14 +930,23 @@ async function analyzeTargetProfile(tabId, targetUrl) {
       throw new Error(`N8N API request failed: ${scoreResponse.status} ${scoreResponse.statusText}`);
     }
 
-    const scoreData = await scoreResponse.json();
+    scoreData = await scoreResponse.json();
     console.log('Score data received:', scoreData);
 
     // Store score data
     n8nScoreData = scoreData;
 
-    // Display the score screen
-    displayScoreScreen(targetProfileData, scoreData);
+    // Notify loading screen that analysis is complete
+    console.log('Notifying loading screen that analysis is complete...');
+    if (window.notifyAnalysisComplete) {
+      window.notifyAnalysisComplete();
+    } else {
+      // Fallback: loading screen will handle minimum time automatically
+      console.log('Loading screen function not available, using timeout fallback...');
+      setTimeout(() => {
+        window.onLoadingScreenComplete();
+      }, 3000); // Ensure minimum 3 seconds
+    }
 
   } catch (error) {
     console.error('Error in target profile analysis:', error);
