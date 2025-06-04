@@ -9,18 +9,19 @@
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <style>
     @keyframes smooth-progress {
-      0% {
+      from {
         width: 5%;
       }
-      100% {
+      to {
         width: 95%;
       }
     }
     .progress-animated {
-      animation: smooth-progress 4s ease-out forwards;
+      animation: smooth-progress 4s ease-out forwards !important;
     }
     #progress-bar {
-      background-color: #0b80ee;
+      background-color: #0b80ee !important;
+      width: 5%;
     }
   </style>
 <script>
@@ -35,16 +36,34 @@
       if (progressBar) {
         console.log('Starting smooth progress animation...');
         
-        // Start at 5% and animate to 95% over 4 seconds
+        // Force initial state then start animation
         progressBar.style.width = '5%';
-        progressBar.classList.add('progress-animated');
+        console.log('Progress bar initial state set to 5%');
+        console.log('Progress bar element:', progressBar);
+        console.log('Progress bar computed style before animation:', window.getComputedStyle(progressBar).width);
         
-        console.log('Progress bar will animate from 5% to 95% over 4 seconds');
+        // Small delay to ensure initial state is set
+        setTimeout(() => {
+          progressBar.classList.add('progress-animated');
+          console.log('Progress bar animation class added - should animate to 95% over 4 seconds');
+          console.log('Progress bar classes:', progressBar.className);
+          console.log('Progress bar computed style after animation class:', window.getComputedStyle(progressBar).width);
+          
+          // Check animation is actually running
+          setTimeout(() => {
+            console.log('Progress bar width after 1 second:', window.getComputedStyle(progressBar).width);
+          }, 1000);
+          
+          setTimeout(() => {
+            console.log('Progress bar width after 2 seconds:', window.getComputedStyle(progressBar).width);
+          }, 2000);
+        }, 100);
+        
       } else {
         console.error('Progress bar element not found!');
       }
       
-      // Check every 100ms if we should complete
+      // Check every 200ms if we should complete
       const checkCompletion = setInterval(() => {
         const elapsedTime = Date.now() - loadingStartTime;
         
@@ -54,8 +73,8 @@
           
           // Final push to 100%
           if (progressBar) {
-            progressBar.style.width = '100%';
             progressBar.classList.remove('progress-animated');
+            progressBar.style.width = '100%';
             console.log('Analysis complete! Progress: 100%');
           }
           
@@ -64,17 +83,15 @@
           
           // Small delay for visual satisfaction
           setTimeout(() => {
-            if (window.parent && window.parent.onLoadingScreenComplete) {
-              window.parent.onLoadingScreenComplete();
-            } else if (window.onLoadingScreenComplete) {
+            if (window.onLoadingScreenComplete) {
               window.onLoadingScreenComplete();
             }
-          }, 200);
+          }, 300);
         }
-      }, 100);
+      }, 200);
     }
     
-    // Function to be called when actual analysis is complete
+    // Make sure this function is globally accessible
     window.notifyAnalysisComplete = function() {
       console.log('Analysis complete notification received');
       actualLoadingDone = true;
@@ -96,7 +113,7 @@
 <h2 class="text-slate-800 text-xl font-semibold leading-tight mb-4">Calculating networking score...</h2>
 <p class="text-slate-600 text-sm font-normal leading-relaxed mb-8">Analyzing profile, this may take a few moments.</p>
 <div class="w-full h-3 rounded-full overflow-hidden" role="progressbar" aria-label="Analysis progress" aria-valuemin="0" aria-valuemax="100">
-<div id="progress-bar" class="h-full rounded-full transition-all duration-100" style="width: 5%; background-color: #0b80ee;"></div>
+<div id="progress-bar" class="h-full rounded-full" style="width: 5%; background-color: #0b80ee;"></div>
 </div>
 </div>
 </div>
