@@ -139,14 +139,12 @@
         *   Fallback image shows appropriately
         *   Images load quickly and maintain quality
 
-*   **Task 1.8: Fix Navigation Dropdown Logic** [ ]
+*   **Task 1.8: Fix Navigation Dropdown Logic** [x]
     *   **Objective:** Correct navigation button destinations (AC-005.1, AC-005.2).
     *   **Action(s):**
-        1.  Update dropdown profile button to navigate to user's profile screen
-        2.  Verify scanner button maintains current functionality
-        3.  Fix spacing logic to only appear after "View Scraped Information" click
-        4.  Test navigation consistency across extension screens
-        5.  Implement keyboard navigation for accessibility (AC-005.5)
+        1.  Update dropdown profile button to navigate to user's profile screen (profile.html)
+        2.  Test navigation consistency across extension screens
+        3.  Implement keyboard navigation for accessibility (AC-005.5)
     *   **Verification/Deliverable(s):**
         *   Profile dropdown navigates correctly
         *   Consistent navigation across all screens

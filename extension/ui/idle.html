@@ -32,13 +32,14 @@
             <div class="absolute top-4 right-4">
               <div class="relative" id="profileDropdownMenuButtonIdle">
                 <button id="menuToggleButtonIdle"
-                  class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium py-1.5 px-3 rounded-md flex items-center">
+                  class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium py-1.5 px-3 rounded-md flex items-center"
+                  aria-haspopup="true" aria-expanded="false" aria-label="Open navigation menu">
                   Menu
                   <span class="material-icons-outlined ml-1" style="font-size: 16px;">arrow_drop_down</span>
                 </button>
-                <div id="menuDropdownIdle" class="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg py-1 z-10 hidden">
-                  <a id="navMyProfileLinkIdle" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100" href="#">My Profile</a>
-                  <a id="navSettingsLinkIdle" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100" href="#">Settings</a>
+                <div id="menuDropdownIdle" class="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg py-1 z-10 hidden" role="menu" aria-labelledby="menuToggleButtonIdle">
+                  <a id="navMyProfileLinkIdle" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100" href="#" role="menuitem">My Profile</a>
+                  <a id="navSettingsLinkIdle" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100" href="#" role="menuitem">Settings</a>
                 </div>
               </div>
             </div>

@@ -410,21 +410,82 @@ function populateProfileView(profileData) {
     }
   }
 
-  // Setup menu dropdown functionality for profile view
+  // Setup menu dropdown functionality for profile view with keyboard accessibility
   const menuToggleButton = document.getElementById('menuToggleButton');
   const menuDropdown = document.getElementById('menuDropdown');
+  
   if (menuToggleButton && menuDropdown) {
+    // Click to toggle
     menuToggleButton.addEventListener('click', (e) => {
       e.stopPropagation();
-      menuDropdown.classList.toggle('hidden');
-      console.log('Menu dropdown toggled in profile view.');
+      const isHidden = menuDropdown.classList.toggle('hidden');
+      menuToggleButton.setAttribute('aria-expanded', menuDropdown.classList.contains('hidden') ? 'false' : 'true');
+      console.log('Menu dropdown toggled in profile view. Expanded:', menuToggleButton.getAttribute('aria-expanded'));
     });
-    
+
+    // Keyboard navigation for the button
+    menuToggleButton.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        menuDropdown.classList.toggle('hidden');
+        const isExpanded = !menuDropdown.classList.contains('hidden');
+        menuToggleButton.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+        if (isExpanded) {
+          const firstMenuItem = menuDropdown.querySelector('a[role="menuitem"]');
+          if (firstMenuItem) firstMenuItem.focus();
+        }
+      } else if (e.key === 'Escape') {
+        if (!menuDropdown.classList.contains('hidden')) {
+          menuDropdown.classList.add('hidden');
+          menuToggleButton.setAttribute('aria-expanded', 'false');
+          menuToggleButton.focus();
+        }
+      }
+    });
+
     // Close dropdown when clicking outside
     document.addEventListener('click', (e) => {
-      if (!menuToggleButton.contains(e.target) && !menuDropdown.contains(e.target)) {
+      if (!menuDropdown.classList.contains('hidden') && !menuToggleButton.contains(e.target) && !menuDropdown.contains(e.target)) {
         menuDropdown.classList.add('hidden');
+        menuToggleButton.setAttribute('aria-expanded', 'false');
+        console.log('Menu dropdown closed by clicking outside in profile view.');
       }
+    });
+
+    // Keyboard navigation within the dropdown
+    const menuItems = menuDropdown.querySelectorAll('a[role="menuitem"]');
+    menuDropdown.addEventListener('keydown', (e) => {
+      const currentIndex = Array.from(menuItems).indexOf(document.activeElement);
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        const nextIndex = (currentIndex + 1) % menuItems.length;
+        menuItems[nextIndex].focus();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        const prevIndex = (currentIndex - 1 + menuItems.length) % menuItems.length;
+        menuItems[prevIndex].focus();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        menuDropdown.classList.add('hidden');
+        menuToggleButton.setAttribute('aria-expanded', 'false');
+        menuToggleButton.focus();
+      } else if (e.key === 'Tab') {
+        // Allow tabbing out, which will naturally close or move focus
+        menuDropdown.classList.add('hidden');
+        menuToggleButton.setAttribute('aria-expanded', 'false');
+        // Let the browser handle the tab
+      }
+    });
+
+    // Ensure menu items close dropdown and set aria-expanded
+    menuItems.forEach(item => {
+      item.addEventListener('click', () => {
+        if (!menuDropdown.classList.contains('hidden')) {
+          menuDropdown.classList.add('hidden');
+          menuToggleButton.setAttribute('aria-expanded', 'false');
+        }
+      });
     });
   }
 
@@ -460,7 +521,7 @@ function populateProfileView(profileData) {
  * @param {object} profileData - The user's profile data. If null, tries to use global userProfile.
  */
 async function displayUserProfile(profileData) {
-  console.log('Attempting to display user profile...');
+  console.log('Attempting to display user profile on profile.html...');
   const dataToDisplay = profileData || userProfile;
 
   if (!dataToDisplay) {
@@ -471,29 +532,20 @@ async function displayUserProfile(profileData) {
         getStartedBtn.addEventListener('click', handleGetStartedClick);
         getStartedBtn.setAttribute('listenerAttached', 'true');
       }
+      // Also re-populate n8n URL and LinkedIn URL if they exist in settings
+      const n8nUrlInput = document.getElementById('n8n-url');
+      if (n8nUrlInput && appSettings.n8nUrl) n8nUrlInput.value = appSettings.n8nUrl;
+      const linkedInUrlInput = document.getElementById('linkedin-url');
+      // Only populate LinkedIn URL if userProfile is not yet set (i.e., during initial setup)
+      if (linkedInUrlInput && appSettings.userLinkedInUrl && !userProfile) {
+        linkedInUrlInput.value = appSettings.userLinkedInUrl;
+      }
     });
     return;
   }
 
-  console.log('Loading score screen with user profile data (100% match):', dataToDisplay);
-  
-  // Create a special score info for the user's own profile
-  const userScoreInfo = {
-    connectionScore: 100,
-    compatibilityPercentage: 100,
-    insights: [
-      "It's you! Perfect match.",
-      "All your skills and experience align perfectly.",
-      "You know yourself best."
-    ],
-    recommendations: [
-      "Consider expanding your network to find similar professionals",
-      "Update your profile regularly to attract the right connections",
-      "Review your headline and summary for maximum impact"
-    ]
-  };
-  
-  loadView('score_screen', () => populateScoreScreen(dataToDisplay, userScoreInfo, true)); // Pass true to indicate this is user's own profile
+  console.log('Loading profile.html with user profile data:', dataToDisplay);
+  loadView('profile', () => populateProfileView(dataToDisplay));
 }
 // NEW FUNCTION END
 
@@ -632,21 +684,85 @@ function populateScoreScreen(targetData, scoreInfo, isUserProfile = false) {
     });
   }
 
-  // Setup menu dropdown toggle
+  // Setup menu dropdown toggle with keyboard accessibility
   const menuToggleButton = document.getElementById('menuToggleButton');
   const menuDropdown = document.getElementById('menuDropdown');
+
   if (menuToggleButton && menuDropdown) {
+    // Click to toggle
     menuToggleButton.addEventListener('click', (e) => {
       e.stopPropagation();
       menuDropdown.classList.toggle('hidden');
-      console.log('Menu dropdown toggled.');
+      menuToggleButton.setAttribute('aria-expanded', menuDropdown.classList.contains('hidden') ? 'false' : 'true');
+      console.log('Menu dropdown toggled in score screen. Expanded:', menuToggleButton.getAttribute('aria-expanded'));
     });
-    
-    // Close dropdown when clicking outside
-    document.addEventListener('click', (e) => {
-      if (!menuToggleButton.contains(e.target) && !menuDropdown.contains(e.target)) {
-        menuDropdown.classList.add('hidden');
+
+    // Keyboard navigation for the button
+    menuToggleButton.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        menuDropdown.classList.toggle('hidden');
+        const isExpanded = !menuDropdown.classList.contains('hidden');
+        menuToggleButton.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+        if (isExpanded) {
+          const firstMenuItem = menuDropdown.querySelector('a[role="menuitem"]');
+          if (firstMenuItem) firstMenuItem.focus();
+        }
+      } else if (e.key === 'Escape') {
+        if (!menuDropdown.classList.contains('hidden')) {
+          menuDropdown.classList.add('hidden');
+          menuToggleButton.setAttribute('aria-expanded', 'false');
+          menuToggleButton.focus();
+        }
       }
+    });
+
+    // Close dropdown when clicking outside
+    // Ensure this listener is specific enough if multiple menus could exist or be handled by a global listener.
+    // For now, assuming this is fine as each view sets up its own listeners when populated.
+    const clickOutsideHandlerScore = (e) => {
+      if (!menuDropdown.classList.contains('hidden') && !menuToggleButton.contains(e.target) && !menuDropdown.contains(e.target)) {
+        menuDropdown.classList.add('hidden');
+        menuToggleButton.setAttribute('aria-expanded', 'false');
+        console.log('Menu dropdown closed by clicking outside in score screen.');
+      }
+    };
+    // Add this specific handler, and potentially remove it if the view is unloaded to prevent listener buildup.
+    document.addEventListener('click', clickOutsideHandlerScore);
+    // TODO: Consider a mechanism to remove this listener when score_screen is no longer active if views are frequently swapped.
+
+    // Keyboard navigation within the dropdown
+    const menuItems = menuDropdown.querySelectorAll('a[role="menuitem"]');
+    menuDropdown.addEventListener('keydown', (e) => {
+      const currentIndex = Array.from(menuItems).indexOf(document.activeElement);
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        const nextIndex = (currentIndex + 1) % menuItems.length;
+        menuItems[nextIndex].focus();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        const prevIndex = (currentIndex - 1 + menuItems.length) % menuItems.length;
+        menuItems[prevIndex].focus();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        menuDropdown.classList.add('hidden');
+        menuToggleButton.setAttribute('aria-expanded', 'false');
+        menuToggleButton.focus();
+      } else if (e.key === 'Tab') {
+        menuDropdown.classList.add('hidden');
+        menuToggleButton.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    // Ensure menu items close dropdown and set aria-expanded
+    menuItems.forEach(item => {
+      item.addEventListener('click', () => {
+        // The actual navigation is handled by other listeners for these specific IDs
+        if (!menuDropdown.classList.contains('hidden')) {
+          menuDropdown.classList.add('hidden');
+          menuToggleButton.setAttribute('aria-expanded', 'false');
+        }
+      });
     });
   }
 
@@ -766,21 +882,81 @@ function populateIdleView(profileData) {
     console.warn('goToLinkedInButtonIdle element not found in idle.html');
   }
 
-  // Setup menu dropdown functionality for idle view
+  // Setup menu dropdown functionality for idle view with keyboard accessibility
   const menuToggleButtonIdle = document.getElementById('menuToggleButtonIdle');
   const menuDropdownIdle = document.getElementById('menuDropdownIdle');
+
   if (menuToggleButtonIdle && menuDropdownIdle) {
+    // Click to toggle
     menuToggleButtonIdle.addEventListener('click', (e) => {
       e.stopPropagation();
       menuDropdownIdle.classList.toggle('hidden');
-      console.log('Menu dropdown toggled in idle view.');
+      menuToggleButtonIdle.setAttribute('aria-expanded', menuDropdownIdle.classList.contains('hidden') ? 'false' : 'true');
+      console.log('Menu dropdown toggled in idle view. Expanded:', menuToggleButtonIdle.getAttribute('aria-expanded'));
     });
-    
-    // Close dropdown when clicking outside
-    document.addEventListener('click', (e) => {
-      if (!menuToggleButtonIdle.contains(e.target) && !menuDropdownIdle.contains(e.target)) {
-        menuDropdownIdle.classList.add('hidden');
+
+    // Keyboard navigation for the button
+    menuToggleButtonIdle.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        menuDropdownIdle.classList.toggle('hidden');
+        const isExpanded = !menuDropdownIdle.classList.contains('hidden');
+        menuToggleButtonIdle.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+        if (isExpanded) {
+          const firstMenuItem = menuDropdownIdle.querySelector('a[role="menuitem"]');
+          if (firstMenuItem) firstMenuItem.focus();
+        }
+      } else if (e.key === 'Escape') {
+        if (!menuDropdownIdle.classList.contains('hidden')) {
+          menuDropdownIdle.classList.add('hidden');
+          menuToggleButtonIdle.setAttribute('aria-expanded', 'false');
+          menuToggleButtonIdle.focus();
+        }
       }
+    });
+
+    // Close dropdown when clicking outside
+    const clickOutsideHandlerIdle = (e) => {
+      if (!menuDropdownIdle.classList.contains('hidden') && !menuToggleButtonIdle.contains(e.target) && !menuDropdownIdle.contains(e.target)) {
+        menuDropdownIdle.classList.add('hidden');
+        menuToggleButtonIdle.setAttribute('aria-expanded', 'false');
+        console.log('Menu dropdown closed by clicking outside in idle view.');
+      }
+    };
+    document.addEventListener('click', clickOutsideHandlerIdle);
+    // TODO: Consider a mechanism to remove this listener when idle_view is no longer active.
+
+    // Keyboard navigation within the dropdown
+    const menuItemsIdle = menuDropdownIdle.querySelectorAll('a[role="menuitem"]');
+    menuDropdownIdle.addEventListener('keydown', (e) => {
+      const currentIndex = Array.from(menuItemsIdle).indexOf(document.activeElement);
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        const nextIndex = (currentIndex + 1) % menuItemsIdle.length;
+        menuItemsIdle[nextIndex].focus();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        const prevIndex = (currentIndex - 1 + menuItemsIdle.length) % menuItemsIdle.length;
+        menuItemsIdle[prevIndex].focus();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        menuDropdownIdle.classList.add('hidden');
+        menuToggleButtonIdle.setAttribute('aria-expanded', 'false');
+        menuToggleButtonIdle.focus();
+      } else if (e.key === 'Tab') {
+        menuDropdownIdle.classList.add('hidden');
+        menuToggleButtonIdle.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    // Ensure menu items close dropdown and set aria-expanded
+    menuItemsIdle.forEach(item => {
+      item.addEventListener('click', () => {
+        if (!menuDropdownIdle.classList.contains('hidden')) {
+          menuDropdownIdle.classList.add('hidden');
+          menuToggleButtonIdle.setAttribute('aria-expanded', 'false');
+        }
+      });
     });
   }
 
