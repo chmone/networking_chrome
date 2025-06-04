@@ -16,8 +16,8 @@
     }
 
     .score-circle {
-      width: 120px;
-      height: 120px;
+      width: 180px;
+      height: 180px;
       border-radius: 50%;
       position: relative;
       display: flex;
@@ -46,7 +46,7 @@
     }
 
     .score-circle .progress-circle {
-      stroke-dasharray: 283;
+      stroke-dasharray: 534;
     }
   </style>
 </head>
@@ -54,9 +54,9 @@
 <body class="bg-slate-50">
   <div class="relative flex size-full min-h-screen flex-col group/design-root overflow-x-hidden"
     style='font-family: Inter, "Noto Sans", sans-serif;'>
-    <div class="flex h-full grow flex-col items-center justify-center p-4 md:p-8">
+    <div class="flex h-full grow flex-col items-center justify-center p-2 md:p-4">
       <div class="layout-content-container flex flex-col w-full max-w-md bg-white shadow-lg rounded-xl overflow-hidden">
-        <div class="p-6 @container relative">
+        <div class="p-4 @container relative">
           <div class="absolute top-4 right-4">
             <div class="relative" id="profileDropdownMenuButton">
               <button id="menuToggleButton"
@@ -72,12 +72,9 @@
               </div>
             </div>
           </div>
-          <div class="flex w-full flex-col items-center gap-6 mb-6">
+          <div class="flex w-full flex-col items-center gap-4 mb-4">
             <div class="relative">
-              <img id="targetProfileImage"
-                class="aspect-square object-cover rounded-full size-20 border-4 border-white shadow-md"
-                src="https://i.imgur.com/jeKxn7N.png"
-                alt="Profile Picture">
+              <img id="targetProfileImage" class="aspect-square object-cover rounded-full border-4 border-white shadow-md" style="width: 120px; height: 120px;" src="https://i.imgur.com/jeKxn7N.png" alt="Profile Picture">
             </div>
             <div class="flex flex-col items-center justify-center">
               <p id="targetProfileName"
@@ -86,11 +83,11 @@
                 [Target Headline]</p>
             </div>
           </div>
-          <div class="mb-8 flex flex-col items-center">
-            <div class="score-circle mb-4">
+          <div class="mb-6 flex flex-col items-center">
+            <div class="score-circle mb-3">
               <svg>
-                <circle class="background-circle" cx="60" cy="60" r="45"></circle>
-                <circle id="scoreProgressCircle" class="progress-circle" cx="60" cy="60" r="45"></circle>
+                <circle class="background-circle" cx="90" cy="90" r="85"></circle>
+                <circle id="scoreProgressCircle" class="progress-circle" cx="90" cy="90" r="85"></circle>
               </svg>
               <span id="scoreValue" class="text-4xl font-bold text-slate-800">--</span>
             </div>
@@ -103,11 +100,11 @@
               </ul>
             </div>
             <button id="scrapedInfoButton"
-              class="mt-6 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-4 rounded-lg shadow-md transition duration-150 ease-in-out">
+              class="mt-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-4 rounded-lg shadow-md transition duration-150 ease-in-out">
               View Scraped Information
             </button>
           </div>
-          <div id="scrapedDetailsSection" class="space-y-6 hidden">
+          <div id="scrapedDetailsSection" class="space-y-4 hidden">
             <div>
               <h3 class="text-slate-700 text-sm font-semibold leading-tight tracking-tight px-1 pb-2 flex items-center">
                 <span class="material-icons-outlined mr-2 text-slate-500" style="font-size: 20px;">description</span>
@@ -150,13 +147,7 @@
             </div>
           </div>
         </div>
-        <div class="bg-slate-50 p-4 border-t border-slate-200 text-center">
-          <a id="viewFullProfileLink" class="text-sm text-blue-600 hover:text-blue-700 font-medium hover:underline" href="#">
-            View Full Profile on LinkedIn
-            <span class="material-icons-outlined ml-1"
-              style="font-size: 16px; vertical-align: middle;">open_in_new</span>
-          </a>
-        </div>
+        
       </div>
     </div>
   </div>
