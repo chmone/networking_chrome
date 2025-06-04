@@ -945,7 +945,7 @@ async function analyzeTargetProfile(tabId, targetUrl) {
       console.log('Loading screen function not available, using timeout fallback...');
       setTimeout(() => {
         window.onLoadingScreenComplete();
-             }, 2000); // Ensure minimum 2 seconds
+             }, 4000); // Ensure minimum 4 seconds
     }
 
   } catch (error) {

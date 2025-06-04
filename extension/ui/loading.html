@@ -24,52 +24,95 @@
       loadingStartTime = Date.now();
       progressBar = document.getElementById('progress-bar');
       if (progressBar) {
-        console.log('Starting progress animation...');
-        console.log('Progress bar element found:', progressBar);
+        console.log('Starting realistic progress animation...');
         
-        // Start with 1% width to make it immediately visible
-        progressBar.style.width = '1%';
-        console.log('Set initial width to 1%');
+        let currentProgress = 1;
+        progressBar.style.width = currentProgress + '%';
         
-        // Animate to 100% over 2 seconds using JavaScript
-        let startTime = Date.now();
-        const duration = 2000; // 2 seconds in milliseconds
+        // Realistic progress stages with different speeds
+        const progressStages = [
+          { range: [1, 15], duration: 800, description: "Initial loading" },      // 0-0.8s: Quick start
+          { range: [15, 35], duration: 1000, description: "Fetching data" },     // 0.8-1.8s: Steady progress  
+          { range: [35, 60], duration: 800, description: "Processing" },         // 1.8-2.6s: Another burst
+          { range: [60, 80], duration: 700, description: "Analyzing" },          // 2.6-3.3s: Slower
+          { range: [80, 95], duration: 500, description: "Finalizing" },         // 3.3-3.8s: Slow down
+          { range: [95, 99], duration: 200, description: "Almost done" }         // 3.8-4.0s: Crawl to 99%
+        ];
         
-        animationInterval = setInterval(() => {
-          const elapsed = Date.now() - startTime;
-          const progress = Math.min((elapsed / duration) * 100, 100); // 2 seconds = 100%
-          
-          console.log(`Animation update: elapsed=${elapsed}ms, progress=${progress}%`);
-          progressBar.style.width = progress + '%';
-          
-          if (progress >= 100) {
-            console.log('Animation complete, clearing interval');
-            clearInterval(animationInterval);
+        let stageIndex = 0;
+        let stageStartTime = Date.now();
+        
+        const animateRealistic = () => {
+          if (stageIndex >= progressStages.length) {
+            // Reached 99%, wait for actual completion
+            return;
           }
-        }, 100); // Update every 100ms for smoother animation
+          
+          const stage = progressStages[stageIndex];
+          const stageElapsed = Date.now() - stageStartTime;
+          const stageProgress = Math.min(stageElapsed / stage.duration, 1);
+          
+          // Random increment within stage range
+          const stageRange = stage.range[1] - stage.range[0];
+          const targetProgress = stage.range[0] + (stageProgress * stageRange);
+          
+          // Add some randomness for realistic feel
+          const randomVariation = (Math.random() - 0.5) * 2; // -1 to +1
+          currentProgress = Math.min(Math.max(targetProgress + randomVariation, currentProgress), stage.range[1]);
+          
+          progressBar.style.width = currentProgress + '%';
+          console.log(`${stage.description}: ${currentProgress.toFixed(1)}%`);
+          
+          // Move to next stage when current is complete
+          if (stageProgress >= 1) {
+            stageIndex++;
+            stageStartTime = Date.now();
+            if (stageIndex < progressStages.length) {
+              console.log(`Moving to stage: ${progressStages[stageIndex].description}`);
+            } else {
+              console.log('Reached 99%, waiting for actual completion...');
+            }
+          }
+          
+          // Continue animation
+          if (stageIndex < progressStages.length) {
+            setTimeout(animateRealistic, 100 + Math.random() * 100); // 100-200ms intervals for organic feel
+          }
+        };
         
-        console.log('Progress animation started with JavaScript, duration:', duration);
+        // Start the realistic animation
+        animateRealistic();
+        
+        console.log('Realistic progress animation started - 4 seconds to 99%');
       } else {
         console.error('Progress bar element not found!');
-        console.log('All elements with progress-bar id:', document.querySelectorAll('#progress-bar'));
       }
       
       // Check every 100ms if we should complete
       const checkCompletion = setInterval(() => {
         const elapsedTime = Date.now() - loadingStartTime;
         
-        // Minimum 2 seconds AND actual loading must be done
-        if (elapsedTime >= 2000 && actualLoadingDone) {
+        // Minimum 4 seconds AND actual loading must be done
+        if (elapsedTime >= 4000 && actualLoadingDone) {
           clearInterval(checkCompletion);
-          if (animationInterval) clearInterval(animationInterval);
+          
+          // Final push to 100%
+          if (progressBar) {
+            progressBar.style.width = '100%';
+            console.log('Analysis complete! Progress: 100%');
+          }
+          
           isLoadingComplete = true;
           console.log('Loading complete - notifying parent...');
-          // Notify parent that loading is ready to complete
-          if (window.parent && window.parent.onLoadingScreenComplete) {
-            window.parent.onLoadingScreenComplete();
-          } else if (window.onLoadingScreenComplete) {
-            window.onLoadingScreenComplete();
-          }
+          
+          // Small delay for visual satisfaction
+          setTimeout(() => {
+            if (window.parent && window.parent.onLoadingScreenComplete) {
+              window.parent.onLoadingScreenComplete();
+            } else if (window.onLoadingScreenComplete) {
+              window.onLoadingScreenComplete();
+            }
+          }, 200);
         }
       }, 100);
     }
