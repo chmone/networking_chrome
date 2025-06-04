@@ -152,7 +152,7 @@
 
 #### **6. Text Formatting Improvements (US-006)**
 
-*   **Task 1.9: Clean Up Text Display Formatting** [ ]
+*   **Task 1.9: Clean Up Text Display Formatting** [x]
     *   **Objective:** Remove copy-paste artifacts and improve text presentation (AC-006.1, AC-006.2).
     *   **Action(s):**
         1.  Update text processing in popup_core.js to remove formatting artifacts

@@ -331,39 +331,58 @@ async function setRandomGif(imageElement, category = 'loading') {
  * @param {object} profileData - The scraped profile data.
  */
 function populateProfileView(profileData) {
+  console.log('Populating profile view with user data:', profileData);
   if (!profileData) {
-    console.warn('populateProfileView called with no profileData.');
+    console.warn('populateProfileView called with no profileData. Displaying error or fallback.');
+    // Consider loading an error view or a message indicating no profile data
+    // For now, just ensuring elements exist before trying to populate.
     return;
   }
 
-  const nameEl = document.getElementById('profileName');
-  const headlineEl = document.getElementById('profileHeadline');
+  const profileNameEl = document.getElementById('profileName');
+  const profileHeadlineEl = document.getElementById('profileHeadline');
+  const profileLocationEl = document.getElementById('profileLocation');
+  const profileImageEl = document.getElementById('profileImage');
   const summaryEl = document.getElementById('profileSummary');
-  const imageDiv = document.getElementById('profileImage'); // For user's own profile view
   const expContainer = document.getElementById('experienceContainer');
   const eduContainer = document.getElementById('educationContainer');
   const licContainer = document.getElementById('licensesContainer');
 
-  if (nameEl) nameEl.textContent = profileData.name || '[Name not available]';
-  if (headlineEl) headlineEl.textContent = profileData.headline || '[Headline not available]';
-  if (summaryEl) summaryEl.textContent = profileData.summary || '[Summary not available]';
-  
-  // Updated image handling logic
-  if (imageDiv) {
-    setProfileImageRandomAvatar(imageDiv);
+  if (profileNameEl && profileData.name) profileNameEl.textContent = cleanText(profileData.name);
+  if (profileHeadlineEl && profileData.headline) profileHeadlineEl.textContent = cleanText(profileData.headline);
+  if (profileLocationEl && profileData.location) profileLocationEl.textContent = cleanText(profileData.location);
+  if (summaryEl && profileData.summary) summaryEl.textContent = cleanText(profileData.summary);
+
+  if (profileImageEl) {
+    // Assuming setProfileImageRandomAvatar handles fallbacks and is still desired for the main profile view.
+    // If actual profile image URL is available in profileData.profilePicture, use that.
+    if (profileData.profilePicture) {
+      profileImageEl.src = profileData.profilePicture;
+      profileImageEl.onerror = () => { // Fallback if the provided picture fails
+        console.warn('Error loading provided profile picture, using random avatar.');
+        setProfileImageRandomAvatar(profileImageEl);
+      };
+    } else {
+      setProfileImageRandomAvatar(profileImageEl); 
+    }
   }
 
   // Populate Experience
   if (expContainer) {
-    expContainer.innerHTML = ''; // Clear placeholder
+    expContainer.innerHTML = ''; // Clear placeholders
     if (profileData.experiences && profileData.experiences.length > 0) {
       profileData.experiences.forEach(exp => {
         const expDiv = document.createElement('div');
         expDiv.className = 'bg-slate-50 p-4 rounded-lg border border-slate-200';
         expDiv.innerHTML = `
-          <p class="text-slate-800 text-sm font-medium leading-normal">${exp.title || ''} ${exp.company ? `at ${exp.company}` : ''}</p>
-          <p class="text-slate-500 text-xs font-normal leading-normal mt-0.5">${exp.dates || exp.duration || ''}</p>
-          ${exp.description ? `<p class="text-slate-600 text-xs mt-1">${exp.description}</p>` : ''}
+          <p class="text-slate-800 text-sm font-medium leading-normal">
+            ${cleanText(exp.title) || '[Job Title]'} 
+            ${exp.company ? `at ${cleanText(exp.company)}` : ''}
+          </p>
+          <p class="text-slate-500 text-xs font-normal leading-normal mt-0.5">
+            ${cleanText(exp.dates) || cleanText(exp.duration) || '[Dates]'.trim()}
+          </p>
+          ${exp.description ? `<p class="text-slate-600 text-xs mt-1">${cleanText(exp.description)}</p>` : ''}
         `;
         expContainer.appendChild(expDiv);
       });
@@ -374,15 +393,16 @@ function populateProfileView(profileData) {
 
   // Populate Education
   if (eduContainer) {
-    eduContainer.innerHTML = ''; // Clear placeholder
+    eduContainer.innerHTML = ''; // Clear placeholders
     if (profileData.education && profileData.education.length > 0) {
       profileData.education.forEach(edu => {
         const eduDiv = document.createElement('div');
         eduDiv.className = 'bg-slate-50 p-4 rounded-lg border border-slate-200';
         eduDiv.innerHTML = `
-          <p class="text-slate-800 text-sm font-medium leading-normal">${edu.degree || ''}</p>
-          <p class="text-slate-600 text-xs leading-normal mt-0.5">${edu.schoolName || edu.school || ''}</p>
-          <p class="text-slate-500 text-xs font-normal leading-normal mt-0.5">${edu.dates || edu.duration || ''}</p>
+          <p class="text-slate-800 text-sm font-medium leading-normal">${cleanText(edu.degree) || '[Degree]'.trim()}</p>
+          <p class="text-slate-600 text-xs leading-normal mt-0.5">${cleanText(edu.schoolName || edu.school) || '[School Name]'.trim()}</p>
+          <p class="text-slate-500 text-xs font-normal leading-normal mt-0.5">${cleanText(edu.dates || edu.duration) || '[Dates]'.trim()}</p>
+          ${edu.description ? `<p class="text-slate-600 text-xs mt-1">${cleanText(edu.description)}</p>` : ''}
         `;
         eduContainer.appendChild(eduDiv);
       });
@@ -393,15 +413,15 @@ function populateProfileView(profileData) {
 
   // Populate Licenses & Certifications
   if (licContainer) {
-    licContainer.innerHTML = '';
+    licContainer.innerHTML = ''; // Clear placeholders
     if (profileData.licenses && profileData.licenses.length > 0) {
       profileData.licenses.forEach(lic => {
         const licDiv = document.createElement('div');
         licDiv.className = 'bg-slate-50 p-4 rounded-lg border border-slate-200';
         licDiv.innerHTML = `
-          <p class="text-slate-800 text-sm font-medium leading-normal">${lic.name || ''}</p>
-          ${lic.issuingOrg || lic.issuer ? `<p class="text-slate-600 text-xs leading-normal mt-0.5">Issuer: ${lic.issuingOrg || lic.issuer}</p>` : ''}
-          ${lic.issueDate || lic.date ? `<p class="text-slate-500 text-xs font-normal leading-normal mt-0.5">${lic.issueDate || lic.date}</p>` : ''}
+          <p class="text-slate-800 text-sm font-medium leading-normal">${cleanText(lic.name) || '[License Name]'.trim()}</p>
+          ${lic.issuingOrg || lic.issuer ? `<p class="text-slate-600 text-xs leading-normal mt-0.5">Issuer: ${cleanText(lic.issuingOrg || lic.issuer)}</p>` : ''}
+          ${lic.issueDate || lic.date ? `<p class="text-slate-500 text-xs font-normal leading-normal mt-0.5">${cleanText(lic.issueDate || lic.date)}</p>` : ''}
         `;
         licContainer.appendChild(licDiv);
       });
@@ -571,21 +591,29 @@ function populateScoreScreen(targetData, scoreInfo, isUserProfile = false) {
   const targetImageElement = document.getElementById('targetProfileImage');
 
   if (targetNameElement) {
-    targetNameElement.textContent = targetData.name || '[Target Name]';
+    targetNameElement.textContent = cleanText(targetData.name) || '[Target Name]';
   }
   if (targetHeadlineElement) {
-    targetHeadlineElement.textContent = targetData.headline || '[Target Headline]';
+    targetHeadlineElement.textContent = cleanText(targetData.headline) || '[Target Headline]';
   }
   
-  // Updated image handling logic for the profile image on the score screen
   if (targetImageElement) {
-    setProfileImageRandomAvatar(targetImageElement);
+    // If actual profile image URL is available in targetData.profilePicture, use that.
+    if (targetData.profilePicture) {
+        targetImageElement.src = targetData.profilePicture;
+        targetImageElement.onerror = () => { // Fallback if the provided picture fails
+            console.warn('Error loading provided target profile picture, using random avatar.');
+            setProfileImageRandomAvatar(targetImageElement);
+        };
+    } else {
+        setProfileImageRandomAvatar(targetImageElement); 
+    }
   }
 
-  // Add special styling or text for user's own profile
   if (isUserProfile) {
     if (targetNameElement) {
-      targetNameElement.innerHTML = `${targetData.name || '[Your Name]'} <span class="text-blue-600">(You)</span>`;
+      // For user's own profile, name is already cleaned. Add (You) span.
+      targetNameElement.innerHTML = `${targetNameElement.textContent} <span class="text-blue-600">(You)</span>`;
     }
   }
 
@@ -611,7 +639,7 @@ function populateScoreScreen(targetData, scoreInfo, isUserProfile = false) {
     if (scoreInfo.reasons_bullets && scoreInfo.reasons_bullets.length > 0) {
       scoreInfo.reasons_bullets.forEach(reason => {
         const li = document.createElement('li');
-        li.textContent = reason;
+        li.textContent = cleanText(reason, true); // Clean as a list item
         reasonsListEl.appendChild(li);
       });
     } else {
@@ -619,14 +647,14 @@ function populateScoreScreen(targetData, scoreInfo, isUserProfile = false) {
     }
   }
 
-  // Populate Scraped Details Section (for Task 1.6 - initially hidden)
-  // This uses the same logic as populateProfileView, but for target elements.
+  // Populate Scraped Details Section
   const targetSummaryEl = document.getElementById('targetSummary');
   const targetExpContainer = document.getElementById('targetExperienceContainer');
   const targetEduContainer = document.getElementById('targetEducationContainer');
   const targetLicContainer = document.getElementById('targetLicensesContainer');
 
-  if (targetSummaryEl) targetSummaryEl.textContent = targetData.summary || '[Summary not available]';
+  if (targetSummaryEl && targetData.summary) targetSummaryEl.textContent = cleanText(targetData.summary);
+  else if (targetSummaryEl) targetSummaryEl.textContent = '[Summary not available]';
 
   // Populate Target Experience
   if (targetExpContainer) {
@@ -635,7 +663,16 @@ function populateScoreScreen(targetData, scoreInfo, isUserProfile = false) {
       targetData.experiences.forEach(exp => {
         const expDiv = document.createElement('div');
         expDiv.className = 'bg-slate-50 p-4 rounded-lg border border-slate-200';
-        expDiv.innerHTML = `<p class="text-slate-800 text-sm font-medium leading-normal">${exp.title || ''} ${exp.company ? `at ${exp.company}` : ''}</p><p class="text-slate-500 text-xs font-normal leading-normal mt-0.5">${exp.dates || exp.duration || ''}</p>${exp.description ? `<p class="text-slate-600 text-xs mt-1">${exp.description}</p>` : ''}`;
+        expDiv.innerHTML = `
+          <p class="text-slate-800 text-sm font-medium leading-normal">
+            ${cleanText(exp.title) || '[Job Title]'} 
+            ${exp.company ? `at ${cleanText(exp.company)}` : ''}
+          </p>
+          <p class="text-slate-500 text-xs font-normal leading-normal mt-0.5">
+            ${cleanText(exp.dates) || cleanText(exp.duration) || '[Dates]'.trim()}
+          </p>
+          ${exp.description ? `<p class="text-slate-600 text-xs mt-1">${cleanText(exp.description)}</p>` : ''}
+        `;
         targetExpContainer.appendChild(expDiv);
       });
     } else {
@@ -650,7 +687,10 @@ function populateScoreScreen(targetData, scoreInfo, isUserProfile = false) {
       targetData.education.forEach(edu => {
         const eduDiv = document.createElement('div');
         eduDiv.className = 'bg-slate-50 p-4 rounded-lg border border-slate-200';
-        eduDiv.innerHTML = `<p class="text-slate-800 text-sm font-medium leading-normal">${edu.degree || ''}</p><p class="text-slate-600 text-xs leading-normal mt-0.5">${edu.schoolName || edu.school || ''}</p><p class="text-slate-500 text-xs font-normal leading-normal mt-0.5">${edu.dates || edu.duration || ''}</p>`;
+        eduDiv.innerHTML = `
+          <p class="text-slate-800 text-sm font-medium leading-normal">${cleanText(edu.degree) || '[Degree]'.trim()}</p>
+          <p class="text-slate-600 text-xs leading-normal mt-0.5">${cleanText(edu.schoolName || edu.school) || '[School Name]'.trim()}</p>
+          <p class="text-slate-500 text-xs font-normal leading-normal mt-0.5">${cleanText(edu.dates || edu.duration) || '[Dates]'.trim()}</p>`;
         targetEduContainer.appendChild(eduDiv);
       });
     } else {
@@ -665,7 +705,11 @@ function populateScoreScreen(targetData, scoreInfo, isUserProfile = false) {
       targetData.licenses.forEach(lic => {
         const licDiv = document.createElement('div');
         licDiv.className = 'bg-slate-50 p-4 rounded-lg border border-slate-200';
-        licDiv.innerHTML = `<p class="text-slate-800 text-sm font-medium leading-normal">${lic.name || ''}</p>${lic.issuingOrg || lic.issuer ? `<p class="text-slate-600 text-xs leading-normal mt-0.5">Issuer: ${lic.issuingOrg || lic.issuer}</p>` : ''}${lic.issueDate || lic.date ? `<p class="text-slate-500 text-xs font-normal leading-normal mt-0.5">${lic.issueDate || lic.date}</p>` : ''}`;
+        licDiv.innerHTML = `
+          <p class="text-slate-800 text-sm font-medium leading-normal">${cleanText(lic.name) || '[License Name]'.trim()}</p>
+          ${lic.issuingOrg || lic.issuer ? `<p class="text-slate-600 text-xs leading-normal mt-0.5">Issuer: ${cleanText(lic.issuingOrg || lic.issuer)}</p>` : ''}
+          ${lic.issueDate || lic.date ? `<p class="text-slate-500 text-xs font-normal leading-normal mt-0.5">${cleanText(lic.issueDate || lic.date)}</p>` : ''}
+        `;
         targetLicContainer.appendChild(licDiv);
       });
     } else {
@@ -1025,6 +1069,38 @@ function normalizeLinkedInUrl(url) {
     return simpleUrl.toLowerCase();
   }
 }
+
+// NEW FUNCTION START
+/**
+ * Cleans text content by removing excessive whitespace, normalizing newlines,
+ * and optionally handling list-like prefixes.
+ * @param {string} text The input text.
+ * @param {boolean} isListItem If true, attempts to strip common list markers.
+ * @returns {string} The cleaned text.
+ */
+function cleanText(text, isListItem = false) {
+  if (typeof text !== "string" || !text) {
+    return "";
+  }
+
+  let cleaned = text;
+
+  cleaned = cleaned.trim();
+
+  cleaned = cleaned.replace(/\\r\\n|\\r/g, "\\n");
+  cleaned = cleaned.replace(/\\n{3,}/g, "\\n\\n");
+
+  cleaned = cleaned.split("\\n").map(line => {
+    return line.replace(/ {2,}/g, " ").trim();
+  }).join("\\n");
+
+  if (isListItem) {
+    cleaned = cleaned.replace(/^\\s*([*•●◦▪▫–—⁃-]|\d+[.)])\\s*/, "");
+  }
+
+  return cleaned;
+}
+// NEW FUNCTION END
 
 // --- Initialization ---
 
