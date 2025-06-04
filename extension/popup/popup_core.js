@@ -880,13 +880,55 @@ async function analyzeTargetProfile(tabId, targetUrl) {
   let targetProfileData, scoreData;
 
   try {
-    await loadView('loading'); // Display loading screen with 3-second minimum
+    await loadView('loading'); // Display loading screen
     console.log('Loading view displayed, proceeding with scraping...');
 
-    // Set up callback for when loading screen is ready to complete
-    window.onLoadingScreenComplete = () => {
-      console.log('Loading screen completed, showing results...');
-      displayScoreScreen(targetProfileData, scoreData);
+    // Start progress bar animation after loading screen is displayed
+    const loadingStartTime = Date.now();
+    let actualLoadingDone = false;
+    
+    setTimeout(() => {
+      const progressBar = document.getElementById('progress-bar');
+      if (progressBar) {
+        console.log('Starting progress bar animation...');
+        progressBar.style.width = '5%';
+        
+        setTimeout(() => {
+          progressBar.classList.add('progress-animated');
+          console.log('Progress bar animating from 5% to 95% over 4 seconds');
+        }, 100);
+      } else {
+        console.error('Progress bar element not found in loading screen');
+      }
+    }, 200);
+
+    // Set up completion check
+    const checkCompletion = setInterval(() => {
+      const elapsedTime = Date.now() - loadingStartTime;
+      
+      // Minimum 2 seconds AND actual loading must be done
+      if (elapsedTime >= 2000 && actualLoadingDone) {
+        clearInterval(checkCompletion);
+        
+        // Final push to 100%
+        const progressBar = document.getElementById('progress-bar');
+        if (progressBar) {
+          progressBar.classList.remove('progress-animated');
+          progressBar.style.width = '100%';
+          console.log('Analysis complete! Progress: 100%');
+        }
+        
+        console.log('Loading complete (minimum 2s + API done) - showing results...');
+        setTimeout(() => {
+          displayScoreScreen(targetProfileData, scoreData);
+        }, 300);
+      }
+    }, 200);
+    
+    // Function to mark analysis as complete
+    const markAnalysisComplete = () => {
+      console.log('Analysis marked as complete');
+      actualLoadingDone = true;
     };
 
     // 1. Inject the scraper to get target profile data
@@ -933,20 +975,11 @@ async function analyzeTargetProfile(tabId, targetUrl) {
     scoreData = await scoreResponse.json();
     console.log('Score data received:', scoreData);
 
-    // Store score data
+        // Store score data
     n8nScoreData = scoreData;
 
-    // Notify loading screen that analysis is complete
-    console.log('Notifying loading screen that analysis is complete...');
-    if (window.notifyAnalysisComplete) {
-      window.notifyAnalysisComplete();
-    } else {
-      // Fallback: loading screen will handle minimum time automatically
-      console.log('Loading screen function not available, using timeout fallback...');
-      setTimeout(() => {
-        window.onLoadingScreenComplete();
-             }, 2000); // Ensure minimum 2 seconds
-    }
+    // Mark analysis as complete
+    markAnalysisComplete();
 
   } catch (error) {
     console.error('Error in target profile analysis:', error);
