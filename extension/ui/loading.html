@@ -8,9 +8,19 @@
 <link href="data:image/x-icon;base64," rel="icon" type="image/x-icon"/>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <style>
+    @keyframes smooth-progress {
+      0% {
+        width: 5%;
+      }
+      100% {
+        width: 95%;
+      }
+    }
+    .progress-animated {
+      animation: smooth-progress 4s ease-out forwards;
+    }
     #progress-bar {
       background-color: #0b80ee;
-      transition: width 0.1s ease;
     }
   </style>
 <script>
@@ -18,72 +28,18 @@
     let progressBar;
     let isLoadingComplete = false;
     let actualLoadingDone = false;
-    let animationInterval;
     
     function startProgressAnimation() {
       loadingStartTime = Date.now();
       progressBar = document.getElementById('progress-bar');
       if (progressBar) {
-        console.log('Starting realistic progress animation...');
+        console.log('Starting smooth progress animation...');
         
-        let currentProgress = 1;
-        progressBar.style.width = currentProgress + '%';
+        // Start at 5% and animate to 95% over 4 seconds
+        progressBar.style.width = '5%';
+        progressBar.classList.add('progress-animated');
         
-        // Realistic progress stages with different speeds
-        const progressStages = [
-          { range: [1, 15], duration: 800, description: "Initial loading" },      // 0-0.8s: Quick start
-          { range: [15, 35], duration: 1000, description: "Fetching data" },     // 0.8-1.8s: Steady progress  
-          { range: [35, 60], duration: 800, description: "Processing" },         // 1.8-2.6s: Another burst
-          { range: [60, 80], duration: 700, description: "Analyzing" },          // 2.6-3.3s: Slower
-          { range: [80, 95], duration: 500, description: "Finalizing" },         // 3.3-3.8s: Slow down
-          { range: [95, 99], duration: 200, description: "Almost done" }         // 3.8-4.0s: Crawl to 99%
-        ];
-        
-        let stageIndex = 0;
-        let stageStartTime = Date.now();
-        
-        const animateRealistic = () => {
-          if (stageIndex >= progressStages.length) {
-            // Reached 99%, wait for actual completion
-            return;
-          }
-          
-          const stage = progressStages[stageIndex];
-          const stageElapsed = Date.now() - stageStartTime;
-          const stageProgress = Math.min(stageElapsed / stage.duration, 1);
-          
-          // Random increment within stage range
-          const stageRange = stage.range[1] - stage.range[0];
-          const targetProgress = stage.range[0] + (stageProgress * stageRange);
-          
-          // Add some randomness for realistic feel
-          const randomVariation = (Math.random() - 0.5) * 2; // -1 to +1
-          currentProgress = Math.min(Math.max(targetProgress + randomVariation, currentProgress), stage.range[1]);
-          
-          progressBar.style.width = currentProgress + '%';
-          console.log(`${stage.description}: ${currentProgress.toFixed(1)}%`);
-          
-          // Move to next stage when current is complete
-          if (stageProgress >= 1) {
-            stageIndex++;
-            stageStartTime = Date.now();
-            if (stageIndex < progressStages.length) {
-              console.log(`Moving to stage: ${progressStages[stageIndex].description}`);
-            } else {
-              console.log('Reached 99%, waiting for actual completion...');
-            }
-          }
-          
-          // Continue animation
-          if (stageIndex < progressStages.length) {
-            setTimeout(animateRealistic, 100 + Math.random() * 100); // 100-200ms intervals for organic feel
-          }
-        };
-        
-        // Start the realistic animation
-        animateRealistic();
-        
-        console.log('Realistic progress animation started - 4 seconds to 99%');
+        console.log('Progress bar will animate from 5% to 95% over 4 seconds');
       } else {
         console.error('Progress bar element not found!');
       }
@@ -92,18 +48,19 @@
       const checkCompletion = setInterval(() => {
         const elapsedTime = Date.now() - loadingStartTime;
         
-        // Minimum 4 seconds AND actual loading must be done
-        if (elapsedTime >= 4000 && actualLoadingDone) {
+        // Minimum 2 seconds AND actual loading must be done
+        if (elapsedTime >= 2000 && actualLoadingDone) {
           clearInterval(checkCompletion);
           
           // Final push to 100%
           if (progressBar) {
             progressBar.style.width = '100%';
+            progressBar.classList.remove('progress-animated');
             console.log('Analysis complete! Progress: 100%');
           }
           
           isLoadingComplete = true;
-          console.log('Loading complete - notifying parent...');
+          console.log('Loading complete (minimum 2s + API done) - notifying parent...');
           
           // Small delay for visual satisfaction
           setTimeout(() => {
@@ -139,7 +96,7 @@
 <h2 class="text-slate-800 text-xl font-semibold leading-tight mb-4">Calculating networking score...</h2>
 <p class="text-slate-600 text-sm font-normal leading-relaxed mb-8">Analyzing profile, this may take a few moments.</p>
 <div class="w-full h-3 rounded-full overflow-hidden" role="progressbar" aria-label="Analysis progress" aria-valuemin="0" aria-valuemax="100">
-<div id="progress-bar" class="h-full rounded-full transition-all duration-100" style="width: 1%; background-color: #0b80ee;"></div>
+<div id="progress-bar" class="h-full rounded-full transition-all duration-100" style="width: 5%; background-color: #0b80ee;"></div>
 </div>
 </div>
 </div>
