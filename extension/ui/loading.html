@@ -17,7 +17,11 @@
       }
     }
     .progress-animated {
-      animation: progress-fill 3s ease-out forwards;
+      animation: progress-fill 2s ease-out forwards;
+    }
+    #progress-bar {
+      background-color: #0b80ee;
+      transition: width 0.1s ease;
     }
   </style>
 <script>
@@ -30,20 +34,26 @@
       loadingStartTime = Date.now();
       progressBar = document.getElementById('progress-bar');
       if (progressBar) {
+        console.log('Starting progress animation...');
         progressBar.classList.add('progress-animated');
+      } else {
+        console.error('Progress bar element not found!');
       }
       
       // Check every 100ms if we should complete
       const checkCompletion = setInterval(() => {
         const elapsedTime = Date.now() - loadingStartTime;
         
-        // Minimum 3 seconds AND actual loading must be done
-        if (elapsedTime >= 3000 && actualLoadingDone) {
+        // Minimum 2 seconds AND actual loading must be done
+        if (elapsedTime >= 2000 && actualLoadingDone) {
           clearInterval(checkCompletion);
           isLoadingComplete = true;
+          console.log('Loading complete - notifying parent...');
           // Notify parent that loading is ready to complete
           if (window.parent && window.parent.onLoadingScreenComplete) {
             window.parent.onLoadingScreenComplete();
+          } else if (window.onLoadingScreenComplete) {
+            window.onLoadingScreenComplete();
           }
         }
       }, 100);
@@ -51,10 +61,12 @@
     
     // Function to be called when actual analysis is complete
     window.notifyAnalysisComplete = function() {
+      console.log('Analysis complete notification received');
       actualLoadingDone = true;
     };
     
     document.addEventListener("DOMContentLoaded", function() {
+      console.log('Loading screen DOM loaded');
       startProgressAnimation();
     });
   </script>
@@ -69,7 +81,7 @@
 <h2 class="text-slate-800 text-xl font-semibold leading-tight mb-4">Calculating networking score...</h2>
 <p class="text-slate-600 text-sm font-normal leading-relaxed mb-8">Analyzing profile, this may take a few moments.</p>
 <div class="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden" role="progressbar" aria-label="Analysis progress" aria-valuemin="0" aria-valuemax="100">
-<div id="progress-bar" class="h-full bg-[#0b80ee]" style="width: 0%;"></div>
+<div id="progress-bar" class="h-full" style="width: 0%; background-color: #0b80ee;"></div>
 </div>
 </div>
 </div>
