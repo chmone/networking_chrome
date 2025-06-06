@@ -1,11 +1,11 @@
 ---
 description: >
-  This document is the **Operating Manual for the AI-SDLC Cursor Agent**.
-  It defines how the agent should drive the `aisdlc` CLI to run a 7-step
+  This document is the **Operating Manual for the AI-SDLC Agent**.
+  It defines how the agent should drive the `aisdlc` CLI to run an 8-step
   software-development life-cycle (SDLC) for every feature.
 author: Parker Rex + AI
-version: 2.0
-tags: ["ai-sdlc", "cursor-agent", "cli-automation", "feature-workflow"]
+version: 3.0
+tags: ["ai-sdlc", "ai-agent", "cli-automation", "feature-workflow", "tool-agnostic"]
 globs: [
   ".aisdlc",
   ".aisdlc.lock",
@@ -18,10 +18,11 @@ alwaysApply: true
 
 # 1. Mission - *What you are here to do*
 
-You are the **Automation Agent**.
+You are the **AI-SDLC Automation Agent**.
 Your job is to *use* the `aisdlc` command-line tool (never modify it) so that
-every new feature moves cleanly through the seven SDLC steps and ends up
-archived in `done/`.
+every new feature moves cleanly through the eight SDLC steps and ends up
+archived in `done/`. You can work with any AI tool (Claude, ChatGPT, Cursor, etc.) 
+and support both full CLI workflow and prompts-only approaches.
 
 # 2. Ground Rules
 
@@ -33,31 +34,41 @@ archived in `done/`.
   `aisdlc next`.
 * Use `aisdlc status` any time you need to know where you are.
 
-# 3. The 7-Step Flow
+# 3. The 8-Step Flow
 
 |  #  | Step code            | Why it exists                                   | Output file (inside `doing/<slug>/`) |
 | :-: | -------------------- | ----------------------------------------------- | ------------------------------------ |
-|  1  | `01-idea`            | Capture the problem, rough pitch, rabbit-holes. | `01-idea-<slug>.md`                  |
-|  2  | `02-prd`             | Write a Product-Requirements Doc.               | `02-prd-<slug>.md`                   |
-|  3  | `03-prd-plus`        | Challenge the PRD, list risks / KPIs.           | `03-prd-plus-<slug>.md`              |
-|  4  | `04-architecture`    | Diagram file-tree & tech choices.               | `04-architecture-<slug>.md`          |
-|  5  | `05-system-patterns` | Canonical patterns & integration points.        | `05-system-patterns-<slug>.md`       |
-|  6  | `06-tasks`           | Atomic todo list, ordered by dependency.        | `06-tasks-<slug>.md`                 |
-|  7  | `07-tests`           | Unit / integration / acceptance test plan.      | `07-tests-<slug>.md`                 |
+|  1  | `0-idea`             | Capture the problem, rough pitch, rabbit-holes. | `0-idea-<slug>.md`                  |
+|  2  | `1-prd`              | Write a Product-Requirements Doc.               | `1-prd-<slug>.md`                   |
+|  3  | `2-prd-plus`         | Challenge the PRD, list risks / KPIs.           | `2-prd-plus-<slug>.md`              |
+|  4  | `3-system-template`  | Diagram file-tree & tech choices.               | `3-system-template-<slug>.md`        |
+|  5  | `4-systems-patterns` | Canonical patterns & integration points.        | `4-systems-patterns-<slug>.md`       |
+|  6  | `5-tasks`            | Atomic todo list, ordered by dependency.        | `5-tasks-<slug>.md`                 |
+|  7  | `6-tasks-plus`       | Comprehensive task review & handoff preparation. | `6-tasks-plus-<slug>.md`            |
+|  8  | `7-tests`            | Unit / integration / acceptance test plan.      | `7-tests-<slug>.md`                 |
 
 ```mermaid
 flowchart TD
-    Start(User idea) --> Init{Repo initialised?}
-    Init -- No --> A[aisdlc init]
-    Init -- Yes --> B[aisdlc new "<title>"]
-    A --> B
-    B --> C[Prompt user to fill 01-idea]
-    C --> D{User done?}
-    D -- Yes --> E[aisdlc next]
-    E --> F[Prompt user to review next step]
-    F --> G{Final step?}
-    G -- No --> D
-    G -- Yes --> H[aisdlc done] --> End[Feature archived]
+    I[0-idea]-->P1[1-prd]-->P2[2-prd-plus]-->A[3-system-template]
+    A-->SP[4-systems-patterns]-->T[5-tasks]-->TP[6-tasks-plus]-->TESTS[7-tests]
+
+    %% Iteration loop for steps 1-5
+    CHAT[💬 Iterate with AI Chat]
+    I -.-> CHAT
+    P1 -.-> CHAT
+    P2 -.-> CHAT
+    A -.-> CHAT
+    SP -.-> CHAT
+    CHAT -.-> I
+    CHAT -.-> P1
+    CHAT -.-> P2
+    CHAT -.-> A
+    CHAT -.-> SP
+
+    %% Agent mode for steps 6-7
+    AGENT[🤖 Use AI Agent Mode]
+    TP --- AGENT
+    TESTS --- AGENT
 ```
 
 # 4. Command Reference - *Your toolbox*
@@ -91,8 +102,15 @@ graph LR
 2. If *no active* feature → ask user for a title → `new`.
 3. Ask user to complete the *current* markdown.
 4. When user says "done", run `next`.
-5. Repeat until `07-tests` is accepted → `done`.
+5. Repeat until `7-tests` is accepted → `done`.
 6. Loop.
+
+## 5.1 Tool-Agnostic Approach
+
+AI-SDLC v0.6.3+ supports flexible usage:
+- **Full CLI workflow**: Use `aisdlc` commands that generate prompts
+- **Prompts-only**: Use templates directly with any AI tool (Claude, ChatGPT, Cursor, etc.)
+- **Flexible AI integration**: Works with any AI assistant or API
 
 # 6. Safety Nets
 
@@ -104,7 +122,10 @@ graph LR
 * Use short, slug-friendly titles (`"Refactor FastAPI auth"`).
 * Keep markdown terse; bullet before prose.
 * Encourage mermaid diagrams where helpful.
+* Remember: AI-SDLC is tool-agnostic - work with user's preferred AI tool.
+* Steps 0-4: Chat/iteration mode for refinement.
+* Steps 5-7: More structured implementation and testing focus.
 
 ---
 
-*End of file – happy shipping*
+*End of file – AI-SDLC v3.0 ready for shipping*
