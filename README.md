@@ -58,6 +58,8 @@ extension/
 ## 🔧 Installation
 
 ### For Development
+
+#### Chrome Extension Setup
 1. Clone this repository:
    ```bash
    git clone https://github.com/Cam/networking_chrome.git
@@ -67,6 +69,25 @@ extension/
 2. Open Chrome and navigate to `chrome://extensions/`
 3. Enable "Developer mode"
 4. Click "Load unpacked" and select the `extension/` directory
+
+#### AI-SDLC Development Environment (Optional)
+For systematic feature development using AI-SDLC workflow:
+
+1. **Windows (PowerShell)**:
+   ```powershell
+   cd ai-sdlc-latest
+   .\dev-setup.ps1 build
+   .\dev-setup.ps1 start
+   ```
+
+2. **Linux/macOS**:
+   ```bash
+   cd ai-sdlc-latest
+   ./dev-setup.sh build
+   ./dev-setup.sh start
+   ```
+
+The Docker environment provides a structured 8-step development workflow with AI assistance.
 
 ### For Users
 *Coming soon: Chrome Web Store publication*
@@ -86,27 +107,39 @@ extension/
 
 ## 📋 Development Status
 
-### ✅ V2 Complete
-- Multi-screen UI implementation
-- Profile scraping and storage
-- Basic N8N integration
-- Settings management
-- Auto-popup functionality
+### ✅ V2.1 Complete (January 2025)
+- Multi-screen UI implementation with dynamic view loading
+- Profile scraping and secure local storage
+- N8N webhook integration with AI-powered scoring
+- Settings management and auto-popup functionality
+- Enhanced UX with loading states and error handling
+- Idle screen integration for user's own profile
+- Comprehensive testing and production-ready code
 
-### 🚧 V2.1 In Progress
-- Enhanced security with rate limiting
-- Improved UX (no scrolling, better formatting)
-- Idle screen integration
-- Profile image display fixes
-- Data transmission improvements
+### 🚀 V3 Development (Current - January 2025)
+- **AI-SDLC Integration**: Systematic development workflow using Docker environment
+- **Enhanced Security**: Rate limiting and improved data validation
+- **Advanced Features**: Expanding networking analysis capabilities
+- **Code Quality**: Following structured 8-step AI-SDLC development process
 
 ## 🤝 Contributing
 
-This is currently a private development project. For questions or collaboration inquiries, please contact the development team.
+This project follows a structured AI-SDLC (Software Development Life Cycle) approach for systematic feature development:
+
+### Development Workflow
+1. **AI-SDLC Process**: All new features follow an 8-step development workflow (idea → PRD → architecture → tasks → tests)
+2. **Version Control**: Use the `v3` branch for current development, `main` for stable releases
+3. **Docker Environment**: Leverage the included Docker setup for consistent development experience
+
+### Contributing Guidelines
+- Follow the existing code patterns and architectural decisions documented in `rules/system.md`
+- Use the AI-SDLC workflow for major features and enhancements
+- Ensure all changes maintain compatibility with Chrome Extension APIs
+- Test thoroughly on actual LinkedIn profiles before submitting
 
 ## 📄 License
 
-*License information to be added*
+MIT License - This project is open source and available under the MIT License.
 
 ## 🔮 Roadmap
 
