@@ -119,19 +119,19 @@ function handleGetStartedClick() {
 
   console.log(`User entered LinkedIn URL: ${userLinkedInUrl}`);
   console.log(`Using hardcoded N8N URL: ${HARDCODED_N8N_URL}`);
-  
+
   // Store context for error recovery
   lastUserActionContext = {
     action: 'initialSetup',
     data: { userLinkedInUrl, n8nUrl: HARDCODED_N8N_URL }
   };
-  
+
   // Save settings immediately with hardcoded N8N URL
   appSettings.n8nUrl = HARDCODED_N8N_URL;
   appSettings.userLinkedInUrl = userLinkedInUrl;
   appSettings.autoOpen = true; // Default setting during setup
-  
-  chrome.storage.local.set({ 
+
+  chrome.storage.local.set({
     appSettings,
     n8nWebhookUrl: HARDCODED_N8N_URL,
     userLinkedInUrl: userLinkedInUrl,
@@ -143,31 +143,31 @@ function handleGetStartedClick() {
       return;
     }
     console.log('Settings saved during initial setup with hardcoded N8N URL.');
-    
+
     loadView('initial_loading', () => setupAndAnimateLoadingScreen('loading')); // Pass simple key 'loading'
-    
+
     // Continue with navigation and scraping...
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (chrome.runtime.lastError) {
-          console.error(`Error querying tabs: ${chrome.runtime.lastError.message}`);
-          displayError('Setup Error', `Could not query active tab: ${chrome.runtime.lastError.message}`);
-          return;
+        console.error(`Error querying tabs: ${chrome.runtime.lastError.message}`);
+        displayError('Setup Error', `Could not query active tab: ${chrome.runtime.lastError.message}`);
+        return;
       }
       if (tabs[0] && tabs[0].id) {
         const tabId = tabs[0].id;
         chrome.tabs.update(tabId, { url: userLinkedInUrl }, () => {
           if (chrome.runtime.lastError) {
-              console.error(`Error navigating tab: ${chrome.runtime.lastError.message}`);
-              displayError('Navigation Error', `Failed to navigate to URL: ${userLinkedInUrl}. ${chrome.runtime.lastError.message}`);
-              return;
+            console.error(`Error navigating tab: ${chrome.runtime.lastError.message}`);
+            displayError('Navigation Error', `Failed to navigate to URL: ${userLinkedInUrl}. ${chrome.runtime.lastError.message}`);
+            return;
           }
           console.log(`Tab ${tabId} navigating to ${userLinkedInUrl}`);
-          
+
           const onTabUpdatedListener = (updatedTabId, changeInfo, tab) => {
             if (updatedTabId === tabId && changeInfo.status === 'complete' && tab && tab.url === userLinkedInUrl) {
               chrome.tabs.onUpdated.removeListener(onTabUpdatedListener);
               console.log(`Tab ${tabId} finished loading ${userLinkedInUrl}. Ready to scrape user profile.`);
-              
+
               // Actually scrape the user's profile (not dummy data)
               console.log('Injecting LinkedIn scraper to get user profile...');
               chrome.scripting.executeScript({
@@ -179,20 +179,20 @@ function handleGetStartedClick() {
                   displayError('Scraping Error', 'Could not retrieve your profile data from LinkedIn. Please ensure the page has loaded completely.');
                   return;
                 }
-                
+
                 const scrapedResult = injectionResults[0].result;
-                
+
                 // Check if scraper returned an error
                 if (scrapedResult.error) {
                   console.error('User profile scraping error:', scrapedResult.error);
                   displayError('Profile Scraping Failed', scrapedResult.error);
                   return;
                 }
-                
+
                 const userScrapedData = scrapedResult;
                 console.log('User profile scraped successfully:', userScrapedData);
                 userProfile = userScrapedData;
-                
+
                 chrome.storage.local.set({ userLinkedInProfileData: userScrapedData }, () => {
                   if (chrome.runtime.lastError) {
                     console.error(`Error saving user profile: ${chrome.runtime.lastError.message}`);
@@ -223,7 +223,7 @@ let imageConfig = null;
  */
 async function loadImageConfig() {
   if (imageConfig) return imageConfig; // Already loaded
-  
+
   try {
     const response = await fetch('../ui/images.json');
     imageConfig = await response.json();
@@ -260,10 +260,10 @@ function getRandomImage(category) {
     console.warn('Image config not loaded, using fallback');
     return 'https://i.imgur.com/jeKxn7N.png';
   }
-  
+
   const categoryParts = category.split('.');
   let images = imageConfig;
-  
+
   for (const part of categoryParts) {
     images = images[part];
     if (!images) {
@@ -271,7 +271,7 @@ function getRandomImage(category) {
       return imageConfig.placeholders?.profile || 'https://i.imgur.com/jeKxn7N.png';
     }
   }
-  
+
   if (Array.isArray(images)) {
     return images[Math.floor(Math.random() * images.length)];
   } else {
@@ -296,9 +296,9 @@ async function setProfileImageRandomAvatar(imageElement) {
   console.log(`Setting random avatar: ${randomAvatarUrl} for element:`, imageElement.id);
   imageElement.src = randomAvatarUrl;
   imageElement.onerror = () => {
-      console.warn(`Error loading random avatar: ${randomAvatarUrl}, using fallback.`);
-      imageElement.src = fallbackUrl;
-      imageElement.alt = "Avatar fallback";
+    console.warn(`Error loading random avatar: ${randomAvatarUrl}, using fallback.`);
+    imageElement.src = fallbackUrl;
+    imageElement.alt = "Avatar fallback";
   };
 }
 
@@ -320,9 +320,9 @@ async function setRandomGif(imageElement, category = 'loading') {
   console.log(`Setting random ${category} gif: ${randomGifUrl} for element:`, imageElement.id);
   imageElement.src = randomGifUrl;
   imageElement.onerror = () => {
-      console.warn(`Error loading random gif: ${randomGifUrl}, using fallback.`);
-      imageElement.src = fallbackUrl;
-      imageElement.alt = "GIF fallback";
+    console.warn(`Error loading random gif: ${randomGifUrl}, using fallback.`);
+    imageElement.src = fallbackUrl;
+    imageElement.alt = "GIF fallback";
   };
 }
 
@@ -380,13 +380,13 @@ function populateProfileView(profileData) {
   if (profileImageEl) {
     if (profileData.profilePicture) {
       profileImageEl.src = profileData.profilePicture;
-      profileImageEl.onerror = () => { 
+      profileImageEl.onerror = () => {
         console.warn('Error loading provided profile picture, using random avatar.');
         setProfileImageRandomAvatar(profileImageEl);
       };
     } else {
       console.warn('populateProfileView: profileData.profilePicture is missing, using random avatar as fallback.');
-      setProfileImageRandomAvatar(profileImageEl); 
+      setProfileImageRandomAvatar(profileImageEl);
     }
   }
 
@@ -456,7 +456,7 @@ function populateProfileView(profileData) {
   // Setup menu dropdown functionality for profile view with keyboard accessibility
   const menuToggleButton = document.getElementById('menuToggleButton');
   const menuDropdown = document.getElementById('menuDropdown');
-  
+
   if (menuToggleButton && menuDropdown) {
     // Click to toggle
     menuToggleButton.addEventListener('click', (e) => {
@@ -619,17 +619,17 @@ function populateScoreScreen(targetData, scoreInfo, isUserProfile = false) {
   if (targetHeadlineElement) {
     targetHeadlineElement.textContent = cleanText(targetData.headline) || '[Target Headline]';
   }
-  
+
   if (targetImageElement) {
     // If actual profile image URL is available in targetData.profilePicture, use that.
     if (targetData.profilePicture) {
-        targetImageElement.src = targetData.profilePicture;
-        targetImageElement.onerror = () => { // Fallback if the provided picture fails
-            console.warn('Error loading provided target profile picture, using random avatar.');
-            setProfileImageRandomAvatar(targetImageElement);
-        };
+      targetImageElement.src = targetData.profilePicture;
+      targetImageElement.onerror = () => { // Fallback if the provided picture fails
+        console.warn('Error loading provided target profile picture, using random avatar.');
+        setProfileImageRandomAvatar(targetImageElement);
+      };
     } else {
-        setProfileImageRandomAvatar(targetImageElement); 
+      setProfileImageRandomAvatar(targetImageElement);
     }
   }
 
@@ -914,7 +914,7 @@ function populateIdleView(profileData) {
   const userHeadlineElement = document.getElementById('userHeadlineIdle');
   const userImageElement = document.getElementById('userProfileImageIdle');
   const goToLinkedInBtn = document.getElementById('goToLinkedInButtonIdle');
-  
+
   // Set random idle gif
   const idleGif = document.getElementById('idle-gif');
   if (idleGif) {
@@ -939,7 +939,7 @@ function populateIdleView(profileData) {
     goToLinkedInBtn.replaceWith(goToLinkedInBtn.cloneNode(true));
     const newgoToLinkedInBtn = document.getElementById('goToLinkedInButtonIdle'); // Re-fetch after clone
     if (newgoToLinkedInBtn) {
-        newgoToLinkedInBtn.addEventListener('click', (e) => {
+      newgoToLinkedInBtn.addEventListener('click', (e) => {
         e.preventDefault(); // Prevent default anchor action
         chrome.tabs.create({ url: 'https://www.linkedin.com' });
         console.log('Navigating to LinkedIn from idle screen.');
@@ -1139,7 +1139,7 @@ async function initializePopup() {
   targetProfileScrapedData = null;
   n8nScoreData = null;
   currentError = null;
-  
+
   // Preload image configuration
   await loadImageConfig();
 
@@ -1223,14 +1223,14 @@ async function initializePopup() {
     const isOwnProfile = userProfile && normalizedCurrentUrl && normalizedUserLinkedInUrl && (normalizedCurrentUrl === normalizedUserLinkedInUrl);
     const isLinkedInFeed = normalizedCurrentUrl.includes('linkedin.com/feed');
     const isLinkedInHomePage = normalizedCurrentUrl === 'linkedin.com' || normalizedCurrentUrl === 'linkedin.com/home';
-    
+
     console.log(`PRIORITY CHECK - isOwnProfile=${isOwnProfile}, isFeed=${isLinkedInFeed}, isHome=${isLinkedInHomePage}`);
 
     // PRIORITY: If this is own profile, feed, or homepage - show idle immediately
     if (isOwnProfile || isLinkedInFeed || isLinkedInHomePage) {
       console.log(`PRIORITY: Showing idle screen. Reason: isOwnProfile=${isOwnProfile}, isFeed=${isLinkedInFeed}, isHome=${isLinkedInHomePage}`);
       loadView('idle', () => populateIdleView(userProfile));
-      isLoading = false; 
+      isLoading = false;
       return; // Exit immediately, don't check auto-analysis context
     }
   } catch (e) {
@@ -1242,7 +1242,7 @@ async function initializePopup() {
   console.log('Step 5: Checking for auto-analysis context from storage...');
   if (items.contextReady && items.targetProfileUrl && items.targetProfileTabId) {
     console.log(`Auto-analysis context found in storage: URL=${items.targetProfileUrl}, TabID=${items.targetProfileTabId}`);
-    
+
     let activeTabForContextCheck = null;
     try {
       [activeTabForContextCheck] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -1284,7 +1284,7 @@ async function initializePopup() {
     console.log('DEFAULT: Showing idle screen for all other cases. URL:', currentUrl);
     loadView('idle', () => populateIdleView(userProfile));
   }
-  
+
   isLoading = false;
 }
 
@@ -1313,11 +1313,11 @@ async function analyzeTargetProfile(tabId, targetUrl) {
     // Set up completion check (this logic remains as it's specific to analyzeTargetProfile)
     const checkCompletion = setInterval(() => {
       const elapsedTime = Date.now() - loadingStartTime;
-      
+
       // Minimum 2 seconds AND actual loading must be done
       if (elapsedTime >= 2000 && actualLoadingDone) {
         clearInterval(checkCompletion);
-        
+
         console.log('Analysis complete! Loading finished smoothly at 99%');
         console.log('Loading complete (minimum 2s + API done) - showing results...');
         setTimeout(() => {
@@ -1325,7 +1325,7 @@ async function analyzeTargetProfile(tabId, targetUrl) {
         }, 300);
       }
     }, 200);
-    
+
     // Function to mark analysis as complete (this logic remains)
     const markAnalysisComplete = () => {
       console.log('Analysis marked as complete');
@@ -1376,7 +1376,15 @@ async function analyzeTargetProfile(tabId, targetUrl) {
     scoreData = await scoreResponse.json();
     console.log('Score data received:', scoreData);
 
-        // Store score data
+    // Transform N8N response format to V2 expected format
+    const transformedScoreData = {
+      score: scoreData.score || scoreData[0]?.output?.score || 0,
+      reasons_bullets: scoreData.insights || scoreData[0]?.output?.insights || ['Analysis completed successfully']
+    };
+    console.log('Transformed score data for V2:', transformedScoreData);
+    scoreData = transformedScoreData; // Replace with transformed data
+
+    // Store score data
     n8nScoreData = scoreData;
 
     // Mark analysis as complete
@@ -1395,7 +1403,7 @@ async function analyzeTargetProfile(tabId, targetUrl) {
 // --- Main Execution --- 
 document.addEventListener('DOMContentLoaded', initializePopup);
 
-console.log('popup_core.js loaded'); 
+console.log('popup_core.js loaded');
 
 /**
  * Sets up the loading GIF and starts the progress bar animation for a loading screen.
