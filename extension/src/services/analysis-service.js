@@ -37,8 +37,8 @@ class AnalysisService {
         await window.stateManager.initialize();
       }
 
-      if (window.n8nService) {
-        await window.n8nService.initialize();
+      if (window.simpleN8nService) {
+        await window.simpleN8nService.initialize();
       }
 
       // Load analysis history
@@ -469,7 +469,7 @@ class AnalysisService {
   async performN8NAnalysis() {
     console.log('AnalysisService: Performing N8N analysis...');
 
-    if (!window.n8nService) {
+    if (!window.simpleN8nService) {
       throw new Error('N8N service not available');
     }
 
@@ -481,7 +481,7 @@ class AnalysisService {
     const n8nData = await window.stateManager.prepareN8NData();
 
     // Send to N8N for analysis
-    const analysisResults = await window.n8nService.sendAnalysisRequest(n8nData);
+    const analysisResults = await window.simpleN8nService.sendAnalysisRequest(n8nData);
 
     console.log('AnalysisService: N8N analysis completed successfully');
     return analysisResults;

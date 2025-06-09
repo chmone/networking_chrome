@@ -17,7 +17,7 @@
     "https://chmones.app.n8n.cloud/*"
   ],
   "action": {
-    "default_popup": "popup/popup_shell.html",
+    "default_popup": "src/popup/index.html",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",

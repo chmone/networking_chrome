@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=400,height=600">
+  <title>LinkedIn Insight V3</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans:wght@400;500;700;900&display=swap"
+    rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="../../popup/popup.css">
+</head>
+
+<body style="width: 400px; min-height: 500px; font-family: Inter, 'Noto Sans', sans-serif;">
+  <div id="view-container" style="width: 100%; height: 100%; min-height: 500px;">
+    <!-- Initial loading state -->
+    <div class="flex items-center justify-center h-full">
+      <div class="text-center">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+        <p class="text-sm text-gray-600">Loading LinkedIn Insight V3...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Load V3 Services -->
+  <script src="../utils/logger.js"></script>
+  <script src="../utils/crypto.js"></script>
+  <script src="../core/security/rate-limits.js"></script>
+  <script src="../core/security/consent-manager.js"></script>
+  <script src="../core/validators.js"></script>
+  <script src="../services/avatar-manager.js"></script>
+  <script src="../popup/components/state-manager.js"></script>
+  <script src="../services/n8n-service-simple.js"></script>
+  <script src="../services/analysis-service.js"></script>
+
+  <!-- Load V3 Popup Core -->
+  <script src="v3-popup-core.js"></script>
+</body>
+
+</html>

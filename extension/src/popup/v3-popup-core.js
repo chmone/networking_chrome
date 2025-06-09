@@ -519,27 +519,18 @@ class V3PopupCore {
       this.populateLicenses(results.targetProfile.licenses || [], 'targetLicensesContainer');
     }
 
-    // Update score display
+    // Update score display with animation
     const scoreElement = document.getElementById('scoreValue');
     const progressCircle = document.getElementById('scoreProgressCircle');
     if (scoreElement && results.score !== undefined) {
-      const score = Math.round(results.score);
-      scoreElement.textContent = score;
+      const targetScore = Math.round(results.score);
 
-      // Update progress circle
+      // Animate score counter
+      this.animateScoreCounter(scoreElement, targetScore);
+
+      // Animate progress circle
       if (progressCircle) {
-        const circumference = 534; // 2 * π * 85
-        const offset = circumference - (score / 100) * circumference;
-        progressCircle.style.strokeDashoffset = offset;
-
-        // Color based on score
-        if (score >= 80) {
-          progressCircle.style.stroke = '#10b981'; // green
-        } else if (score >= 60) {
-          progressCircle.style.stroke = '#f59e0b'; // yellow
-        } else {
-          progressCircle.style.stroke = '#ef4444'; // red
-        }
+        this.animateProgressCircle(progressCircle, targetScore);
       }
     }
 
@@ -563,6 +554,77 @@ class V3PopupCore {
         analysisTimeElement.textContent = `Analysis completed in ${Math.round(duration / 1000)}s`;
       }
     }
+  }
+
+  /**
+   * Animate score counter from 0 to target value
+   * @param {HTMLElement} element - Score display element
+   * @param {number} targetScore - Target score value
+   */
+  animateScoreCounter(element, targetScore) {
+    const duration = 2000; // 2 seconds
+    const startTime = performance.now();
+    const startScore = 0;
+
+    const animate = (currentTime) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      // Use easeOutCubic for smooth deceleration
+      const easeProgress = 1 - Math.pow(1 - progress, 3);
+      const currentScore = Math.round(startScore + (targetScore - startScore) * easeProgress);
+
+      element.textContent = currentScore;
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+
+    requestAnimationFrame(animate);
+  }
+
+  /**
+   * Animate progress circle filling up
+   * @param {SVGCircleElement} circle - Progress circle element
+   * @param {number} targetScore - Target score percentage
+   */
+  animateProgressCircle(circle, targetScore) {
+    const circumference = 534; // 2 * π * 85
+    const duration = 2000; // 2 seconds
+    const startTime = performance.now();
+
+    // Start from fully empty (strokeDashoffset = circumference)
+    circle.style.strokeDasharray = circumference;
+    circle.style.strokeDashoffset = circumference;
+
+    // Color based on target score
+    let targetColor;
+    if (targetScore >= 80) {
+      targetColor = '#10b981'; // green
+    } else if (targetScore >= 60) {
+      targetColor = '#f59e0b'; // yellow  
+    } else {
+      targetColor = '#ef4444'; // red
+    }
+
+    const animate = (currentTime) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      // Use easeOutCubic for smooth deceleration
+      const easeProgress = 1 - Math.pow(1 - progress, 3);
+      const currentOffset = circumference - (circumference * (targetScore / 100) * easeProgress);
+
+      circle.style.strokeDashoffset = currentOffset;
+      circle.style.stroke = targetColor;
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+
+    requestAnimationFrame(animate);
   }
 
   /**
@@ -666,6 +728,112 @@ class V3PopupCore {
     });
 
     document.body.appendChild(diagnosticToggle);
+  }
+
+  /**
+ * Test animation with mock data (for development)
+ * Call this from browser console: window.v3PopupCore.testAnimation()
+ */
+  async testAnimation() {
+    console.log('🧪 Testing Score Animation...');
+
+    try {
+      // Load score screen directly
+      await this.loadView('score_screen', () => {
+        console.log('✅ Score screen loaded');
+      });
+
+      // Wait for view to load
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Mock analysis results (simulates what N8N would return)
+      const mockResults = {
+        score: 78, // Test score for animation
+        insights: [
+          "Shared experience in technology creates conversation opportunities",
+          "Both located in same region - potential for in-person networking",
+          "Complementary skills in AI and software engineering",
+          "Similar career progression suggests good peer mentoring potential"
+        ],
+        metadata: {
+          processingTime: Date.now() - 3000
+        },
+        targetProfile: {
+          name: "Sarah Chen",
+          headline: "AI Product Manager at TechCorp",
+          avatarUrl: "https://i.imgur.com/B5YRmn3.png",
+          summary: "Experienced product manager specializing in AI/ML products"
+        }
+      };
+
+      console.log('🚀 Starting animation with score 78...');
+      this.populateScoreScreen(mockResults);
+
+      console.log('✅ Animation Test Complete!');
+      console.log('📊 Watch: Counter and circle should animate smoothly from 0 to 78');
+
+    } catch (error) {
+      console.error('❌ Animation Test Failed:', error);
+    }
+  }
+
+  /**
+   * Test actual N8N connection
+   * Call this from browser console: window.v3PopupCore.testN8NConnection()
+   */
+  async testN8NConnection() {
+    console.log('🧪 Testing Real N8N Connection...');
+
+    try {
+      if (!window.simpleN8nService) {
+        throw new Error('Simple N8N Service not available');
+      }
+
+      // Test connection first
+      console.log('🔗 Testing N8N webhook connection...');
+      const connectionTest = await window.simpleN8nService.testConnection();
+      console.log('Connection test result:', connectionTest);
+
+      if (!connectionTest.success) {
+        throw new Error(`N8N connection failed: ${connectionTest.error}`);
+      }
+
+      // Test with real profile data
+      console.log('📤 Sending real analysis request...');
+      const mockProfileData = {
+        userProfile: {
+          name: "John Doe",
+          headline: "Software Engineer at TechCorp",
+          location: "San Francisco, CA",
+          experience: ["Software Engineer at TechCorp"],
+          education: ["Computer Science at Stanford"]
+        },
+        targetProfile: {
+          name: "Jane Smith",
+          headline: "Product Manager at StartupCo",
+          location: "San Francisco, CA",
+          experience: ["Product Manager at StartupCo"],
+          education: ["MBA at Berkeley"]
+        }
+      };
+
+      const results = await window.simpleN8nService.sendAnalysisRequest(mockProfileData);
+      console.log('✅ N8N Response received:', results);
+
+      // Show results with animation
+      await this.loadView('score_screen');
+      await new Promise(resolve => setTimeout(resolve, 500));
+      this.populateScoreScreen({
+        ...results,
+        targetProfile: mockProfileData.targetProfile
+      });
+
+      console.log('🎉 Real N8N Integration Test Complete!');
+
+    } catch (error) {
+      console.error('❌ N8N Connection Test Failed:', error);
+      alert(`N8N Test Failed: ${error.message}`);
+    }
   }
 
   /**
