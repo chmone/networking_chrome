@@ -72,12 +72,8 @@ async function scrapeProfileData() {
       console.warn("LinkedIn Insight Scraper: Location was NOT FOUND after trying all selectors.");
     }
 
-    let profileImageUrl = "";
-    const profileImageElement = mainProfileSection.querySelector('img.pv-top-card-profile-picture__image, img[class*="profile-picture"], img[data-delayed-url]');
-    if (profileImageElement) {
-      profileImageUrl = profileImageElement.src || profileImageElement.getAttribute('data-delayed-url') || "";
-    }
-    console.log(`LinkedIn Insight Scraper: Profile image element found: ${!!profileImageElement}, URL: "${profileImageUrl}"`);
+    // PRIVACY NOTE: V3 uses random avatars instead of scraping profile images
+    console.log('LinkedIn Insight Scraper: Profile image scraping disabled in V3 - using random avatars');
 
     let summary = "Summary not found";
     const aboutSection = mainProfileSection.querySelector('section:has(> div#about)');
@@ -230,7 +226,17 @@ async function scrapeProfileData() {
 
     const education = await scrapeEducation(mainProfileSection);
 
-    const finalScrapedData = { name, headline, location, summary, experiences, licenses, education, profileImageUrl, profileUrl: window.location.href };
+    const finalScrapedData = {
+      name,
+      headline,
+      location,
+      summary,
+      experiences,
+      licenses,
+      education,
+      profileUrl: window.location.href
+      // NOTE: Profile images removed - V3 uses random avatars via AvatarManager
+    };
     console.log("LinkedIn Insight Scraper: Final scraped data object being returned:", JSON.stringify(finalScrapedData));
     return finalScrapedData;
   } catch (e) {
@@ -405,19 +411,24 @@ async function scrapeEducation(mainProfileSection) {
 // Listener for messages from the popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "scrapeProfile") {
-    const scrapedData = scrapeProfileData();
-    if (scrapedData.error) {
-      console.error("Error during scraping:", scrapedData.error);
-      sendResponse({ error: scrapedData.error });
-    } else if (scrapedData.name === "Name not found" && scrapedData.headline === "Headline not found" && scrapedData.summary === "Summary not found" && (!scrapedData.experiences || scrapedData.experiences.length === 0)) {
-      const notProfileError = "Could not extract significant profile data. Ensure you are on a LinkedIn profile page and it has loaded completely.";
-      sendResponse({ error: notProfileError });
-    } else {
-      sendResponse({ data: scrapedData });
-    }
-    return true;
+    // Handle async scrapeProfileData properly
+    scrapeProfileData().then(scrapedData => {
+      if (scrapedData.error) {
+        console.error("Error during scraping:", scrapedData.error);
+        sendResponse({ error: scrapedData.error });
+      } else if (scrapedData.name === "Name not found" && scrapedData.headline === "Headline not found" && scrapedData.summary === "Summary not found" && (!scrapedData.experiences || scrapedData.experiences.length === 0)) {
+        const notProfileError = "Could not extract significant profile data. Ensure you are on a LinkedIn profile page and it has loaded completely.";
+        sendResponse({ error: notProfileError });
+      } else {
+        sendResponse({ data: scrapedData });
+      }
+    }).catch(error => {
+      console.error("Error in scrapeProfileData:", error);
+      sendResponse({ error: `Scraping failed: ${error.message}` });
+    });
+    return true; // Will respond asynchronously
   } else {
-    console.log("LinkedIn Insight: Unknown action received", request.action)
+    console.log("LinkedIn Insight: Unknown action received", request.action);
     sendResponse({ error: "Unknown action" });
   }
   return true;
