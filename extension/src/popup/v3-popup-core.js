@@ -62,41 +62,11 @@ class V3PopupCore {
    * @returns {Promise<void>}
    */
   async loadV3Services() {
-    const serviceScripts = [
-      // Security files removed per user request
-      '../src/utils/avatar-manager.js',
-      '../src/popup/components/state-manager.js',
-      '../src/services/n8n-service-simple.js',
-      '../src/services/analysis-service.js',
-      '../src/core/validators.js',
-      '../src/utils/logger.js'
-    ];
-
-    for (const script of serviceScripts) {
-      try {
-        await this.loadScript(script);
-        console.log(`V3PopupCore: Loaded ${script}`);
-      } catch (error) {
-        console.warn(`V3PopupCore: Failed to load ${script}:`, error);
-        // Continue loading other scripts
-      }
-    }
+    // Scripts are now loaded via HTML - no dynamic loading needed
+    console.log('V3PopupCore: Services loaded via HTML script tags');
   }
 
-  /**
-   * Load a script dynamically
-   * @param {string} src - Script source path
-   * @returns {Promise<void>}
-   */
-  loadScript(src) {
-    return new Promise((resolve, reject) => {
-      const script = document.createElement('script');
-      script.src = src;
-      script.onload = resolve;
-      script.onerror = reject;
-      document.head.appendChild(script);
-    });
-  }
+  // Dynamic script loading removed - scripts loaded via HTML
 
   /**
    * Initialize all services in correct dependency order
