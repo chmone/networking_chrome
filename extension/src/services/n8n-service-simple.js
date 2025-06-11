@@ -64,20 +64,19 @@ class SimpleN8NService {
       console.log('SimpleN8NService: Received initial response from N8N:', response);
 
       // Check if synchronous response (has score) or async (has requestId)
-      if (response.score !== undefined) {
-        // Synchronous processing - return immediately
-        console.log('SimpleN8NService: Synchronous response detected');
+      if (response.score !== undefined && Array.isArray(response.insights) && response.insights.length > 0) {
+        // N8N returned complete results with real insights
+        console.log('SimpleN8NService: Complete synchronous response detected with insights');
         return this.validateAndFormatResponse(response);
-      } else if (response.requestId || response.acknowledged) {
-        // Asynchronous processing - wait for completion
+      } else if (response.requestId && !response.score) {
+        // Asynchronous processing - wait for real completion
         console.log('SimpleN8NService: Asynchronous response detected, waiting for completion...');
         const results = await this.waitForN8NCompletion(requestId);
         return this.validateAndFormatResponse(results);
       } else {
-        // Default to async behavior with waiting (typical N8N webhook behavior)
-        console.log('SimpleN8NService: Response format unclear, defaulting to async wait...');
-        const results = await this.waitForN8NCompletion(requestId);
-        return this.validateAndFormatResponse(results);
+        // Treat as synchronous but log potential issues
+        console.log('SimpleN8NService: Uncertain response format, treating as complete');
+        return this.validateAndFormatResponse(response);
       }
 
     } catch (error) {
@@ -111,6 +110,9 @@ class SimpleN8NService {
 
         // Get response data
         const responseData = await response.json();
+        console.log('SimpleN8NService: REAL N8N RESPONSE:', JSON.stringify(responseData, null, 2));
+        console.log('SimpleN8NService: Response has insights:', Array.isArray(responseData.insights));
+        console.log('SimpleN8NService: Response has score:', typeof responseData.score);
         return responseData;
 
       } catch (error) {
@@ -140,6 +142,17 @@ class SimpleN8NService {
     const score = typeof response.score === 'number' ? response.score : 0;
     const insights = Array.isArray(response.insights) ? response.insights : [];
 
+    // Detect placeholder insights (indicates integration issue)
+    if (insights.length > 0 && insights[0].includes("Strong industry alignment detected")) {
+      console.warn('SimpleN8NService: Placeholder insights detected - N8N integration may need attention');
+    }
+
+    // Validate we have real insights
+    if (insights.length === 0) {
+      console.warn('SimpleN8NService: N8N returned no insights, using fallback');
+      insights.push("Analysis completed - detailed insights unavailable");
+    }
+
     // Validate score range
     if (score < 0 || score > 100) {
       console.warn('N8N returned score outside valid range (0-100):', score);
@@ -154,7 +167,7 @@ class SimpleN8NService {
       requestId: response.requestId || 'unknown'
     };
 
-    console.log('SimpleN8NService: Formatted results:', results);
+    console.log('SimpleN8NService: Formatted results with real insights:', results);
     return results;
   }
 
@@ -175,26 +188,19 @@ class SimpleN8NService {
         // Wait before polling (simulate processing time)
         await this.delay(pollInterval);
 
-        // Simulate checking for completion after 8-10 seconds
+        // Try to poll N8N status endpoint for real results
         const elapsed = Date.now() - startTime;
-        if (elapsed >= 8000) {
-          console.log('SimpleN8NService: Processing completed after 8+ seconds');
+        const statusResult = await this.pollN8NStatus(requestId);
 
-          // Return realistic analysis results  
-          return {
-            score: Math.floor(Math.random() * 30) + 60, // Random score 60-90
-            insights: [
-              "Strong industry alignment detected based on profile analysis",
-              "Geographic proximity enables effective networking opportunities",
-              "Complementary skill sets identified for mutual value exchange",
-              "Career progression paths show potential for strategic collaboration"
-            ],
-            metadata: {
-              requestId: requestId,
-              processingTime: elapsed,
-              analysisVersion: "3.0"
-            }
-          };
+        if (statusResult && statusResult.completed) {
+          console.log('SimpleN8NService: Real N8N processing completed');
+          return statusResult.results;
+        }
+
+        // If no real polling available and timeout reached, throw error
+        if (elapsed >= 8000) {
+          console.warn('SimpleN8NService: Timeout reached, no real N8N polling available');
+          throw new Error('N8N processing timeout - no status endpoint available for real results');
         }
 
         console.log(`SimpleN8NService: Still processing... (${Math.round(elapsed / 1000)}s elapsed)`);
