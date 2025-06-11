@@ -73,30 +73,52 @@ class V3PopupCore {
    * @returns {Promise<void>}
    */
   async initializeServices() {
-    console.log('V3PopupCore: Initializing services...');
+    console.log('V3PopupCore: Initializing services in parallel for faster startup...');
 
-    // Initialize diagnostic service first (for logging)
+    // Initialize independent services in parallel for better performance
+    const independentServicePromises = [];
+
+    // Initialize diagnostic service (independent)
     if (window.DiagnosticService) {
-      this.services.diagnosticService = new window.DiagnosticService();
-      await this.services.diagnosticService.initialize(true); // Enable diagnostic mode
+      independentServicePromises.push(
+        new window.DiagnosticService().initialize(true).then(service => {
+          this.services.diagnosticService = service;
+          console.log('V3PopupCore: Diagnostic service initialized');
+        }).catch(error => {
+          console.warn('V3PopupCore: Failed to initialize diagnostic service:', error);
+        })
+      );
     }
 
-    // Crypto service removed per user request
-
-    // Security services removed per user request
-
-    // Initialize avatar manager (for random profile images)
+    // Initialize avatar manager (independent)
     if (window.AvatarManager) {
-      this.services.avatarManager = new window.AvatarManager();
-      await this.services.avatarManager.loadAvatarConfig();
-      await this.services.avatarManager.preloadAvatars(); // Preload for better performance
+      independentServicePromises.push(
+        (async () => {
+          const avatarManager = new window.AvatarManager();
+          await avatarManager.loadAvatarConfig();
+          await avatarManager.preloadAvatars(); // Preload for better performance
+          this.services.avatarManager = avatarManager;
+          console.log('V3PopupCore: Avatar manager initialized');
+        })().catch(error => {
+          console.warn('V3PopupCore: Failed to initialize avatar manager:', error);
+        })
+      );
     }
 
-    // Initialize state manager (core data management)
+    // Initialize state manager (independent)
     if (window.StateManager) {
-      this.services.stateManager = new window.StateManager();
-      await this.services.stateManager.initialize();
+      independentServicePromises.push(
+        new window.StateManager().initialize().then(service => {
+          this.services.stateManager = service;
+          console.log('V3PopupCore: State manager initialized');
+        }).catch(error => {
+          console.warn('V3PopupCore: Failed to initialize state manager:', error);
+        })
+      );
     }
+
+    // Wait for all independent services to complete in parallel
+    await Promise.all(independentServicePromises);
 
     // Initialize data validators
     if (window.DataValidators) {
@@ -516,18 +538,18 @@ class V3PopupCore {
       this.populateLicenses(results.targetProfile.licenses || [], 'targetLicensesContainer');
     }
 
-    // Update score display with animation
+    // Update score display with synchronized animation
     const scoreElement = document.getElementById('scoreValue');
     const progressCircle = document.getElementById('scoreProgressCircle');
     if (scoreElement && results.score !== undefined) {
       const targetScore = Math.round(results.score);
 
-      // Animate score counter
-      this.animateScoreCounter(scoreElement, targetScore);
-
-      // Animate progress circle
+      // Use synchronized animation for perfect sync between counter and circle
       if (progressCircle) {
-        this.animateProgressCircle(progressCircle, targetScore);
+        this.animateSynchronizedScore(scoreElement, progressCircle, targetScore);
+      } else {
+        // Fallback to score counter only if no progress circle
+        this.animateScoreCounter(scoreElement, targetScore);
       }
     }
 
@@ -719,6 +741,56 @@ class V3PopupCore {
 
       circle.style.strokeDashoffset = currentOffset;
       circle.style.stroke = targetColor;
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+
+    requestAnimationFrame(animate);
+  }
+
+  /**
+   * Animate score counter and progress circle in perfect synchronization
+   * @param {HTMLElement} scoreElement - Score display element
+   * @param {SVGCircleElement} circleElement - Progress circle element  
+   * @param {number} targetScore - Target score value
+   */
+  animateSynchronizedScore(scoreElement, circleElement, targetScore) {
+    const duration = 2000; // 2 seconds
+    const startTime = performance.now(); // Shared timing source
+    const startScore = 0;
+
+    // Circle setup
+    const circumference = 534; // 2 * π * 85
+    circleElement.style.strokeDasharray = circumference;
+    circleElement.style.strokeDashoffset = circumference;
+
+    // Color based on target score
+    let targetColor;
+    if (targetScore >= 80) {
+      targetColor = '#10b981'; // green
+    } else if (targetScore >= 60) {
+      targetColor = '#f59e0b'; // yellow  
+    } else {
+      targetColor = '#ef4444'; // red
+    }
+
+    const animate = (currentTime) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      // Use easeOutCubic for smooth deceleration (same for both)
+      const easeProgress = 1 - Math.pow(1 - progress, 3);
+
+      // Update score counter
+      const currentScore = Math.round(startScore + (targetScore - startScore) * easeProgress);
+      scoreElement.textContent = currentScore;
+
+      // Update progress circle (synchronized with same easeProgress)
+      const currentOffset = circumference - (circumference * (targetScore / 100) * easeProgress);
+      circleElement.style.strokeDashoffset = currentOffset;
+      circleElement.style.stroke = targetColor;
 
       if (progress < 1) {
         requestAnimationFrame(animate);

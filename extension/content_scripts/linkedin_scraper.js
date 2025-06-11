@@ -35,18 +35,19 @@ async function waitForElement(selector, timeout = 5000, interval = 500, context 
  * @param {number} timeout - Maximum wait time in milliseconds
  * @returns {Promise<boolean>} Profile loading completion status
  */
-async function waitForProfileComplete(timeout = 10000) {
+async function waitForProfileComplete(timeout = 5000) {
   console.log('LinkedIn Insight Scraper: Waiting for profile to fully load...');
 
   const startTime = Date.now();
   let lastElementCount = 0;
   let stableCount = 0;
-  const STABILITY_THRESHOLD = 3; // Number of checks with same element count
+  const STABILITY_THRESHOLD = 2; // Reduced from 3 for faster completion
+  const CHECK_INTERVAL = 250; // Reduced from 1000ms for 4x faster checking
 
   while (Date.now() - startTime < timeout) {
-    // Check for key profile elements that indicate full loading
+    // Check only core profile elements for faster validation
     const profileElements = document.querySelectorAll(
-      '.scaffold-layout, h1, .text-body-medium, section, .artdeco-card, .pv-text-details__left-panel'
+      '.scaffold-layout, h1, .text-body-medium'
     );
 
     const currentElementCount = profileElements.length;
@@ -70,8 +71,8 @@ async function waitForProfileComplete(timeout = 10000) {
       stableCount = 0; // Reset stability if still loading
     }
 
-    // Wait before next check
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Wait before next check - now 4x faster
+    await new Promise(resolve => setTimeout(resolve, CHECK_INTERVAL));
   }
 
   console.warn('LinkedIn Insight Scraper: Profile loading timeout reached');
