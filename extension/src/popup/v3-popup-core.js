@@ -470,7 +470,7 @@ class V3PopupCore {
     }
 
     try {
-      console.log('V3PopupCore: Starting target analysis...');
+      console.log('V3PopupCore: Starting target analysis with progressive loading...');
       this.analysisInProgress = true;
 
       // Show loading screen
@@ -478,16 +478,32 @@ class V3PopupCore {
         this.setupAndAnimateLoadingScreen('loading');
       });
 
-      // Use the analysis service for complete workflow
+      // Step 1: Scrape profile first (fast - 3-5s)
+      console.log('V3PopupCore: Scraping profile data...');
+      const profileData = await this.scrapeAndValidateProfile(tabId, 'target');
+
+      // Step 2: Update StateManager with profile data for analysis  
+      console.log('V3PopupCore: Updating StateManager with target profile...');
+      if (this.services.stateManager) {
+        await this.services.stateManager.updateTargetProfile(profileData, targetUrl);
+      }
+
+      // Step 3: Calculate score using existing analysis service (stay on loading screen)
+      console.log('V3PopupCore: Starting complete score calculation...');
       if (!this.services.analysisService) {
         throw new Error('Analysis service not available');
       }
 
-      // Start the complete V3 analysis workflow
+      console.log('V3PopupCore: About to call startAnalysis() with:', { tabId, targetUrl });
       const analysisResults = await this.services.analysisService.startAnalysis(tabId, targetUrl);
 
-      // Show results
-      await this.showAnalysisResults(analysisResults);
+      console.log('V3PopupCore: startAnalysis() completed with results:', analysisResults);
+      console.log('V3PopupCore: Analysis results type:', typeof analysisResults);
+      console.log('V3PopupCore: Analysis results keys:', analysisResults ? Object.keys(analysisResults) : 'null/undefined');
+
+      // Step 4: Show final results (single transition from loading to final score)
+      console.log('V3PopupCore: Showing final results...');
+      await this.showFinalResults(analysisResults);
 
       console.log('V3PopupCore: Target analysis completed successfully');
     } catch (error) {
@@ -550,6 +566,115 @@ class V3PopupCore {
 
     return scrapedData;
   }
+
+
+
+  /**
+   * Show final analysis results (single transition from loading to score screen)
+   * @param {Object} analysisResults - Complete analysis results
+   * @returns {Promise<void>}
+   */
+  async showFinalResults(analysisResults) {
+    console.log('V3PopupCore: showFinalResults() called');
+    console.log('V3PopupCore: analysisResults:', analysisResults);
+    console.log('V3PopupCore: analysisResults type:', typeof analysisResults);
+    console.log('V3PopupCore: analysisResults keys:', analysisResults ? Object.keys(analysisResults) : 'null/undefined');
+
+    console.log('V3PopupCore: Transitioning to final results view');
+
+    // Single transition from loading to final score screen
+    await this.loadView('score_screen', () => {
+      this.populateScoreScreen(analysisResults);
+    });
+  }
+
+  /**
+   * Update score display when calculation completes (DEPRECATED - use showFinalResults)
+   * @param {Object} scoreResults - Score calculation results
+   * @returns {Promise<void>}
+   */
+  async updateScoreDisplay(scoreResults) {
+    console.log('V3PopupCore: updateScoreDisplay() called (DEPRECATED)');
+    console.log('V3PopupCore: scoreResults:', scoreResults);
+    console.log('V3PopupCore: scoreResults type:', typeof scoreResults);
+    console.log('V3PopupCore: scoreResults keys:', scoreResults ? Object.keys(scoreResults) : 'null/undefined');
+
+    // Update score element
+    const scoreElement = document.getElementById('scoreValue');
+    const progressCircle = document.getElementById('scoreProgressCircle');
+
+    console.log('V3PopupCore: DOM elements found:', {
+      scoreElement: !!scoreElement,
+      progressCircle: !!progressCircle,
+      scoreElementId: scoreElement?.id,
+      progressCircleId: progressCircle?.id
+    });
+
+    if (scoreResults && scoreResults.score !== undefined) {
+      console.log('V3PopupCore: Found valid score:', scoreResults.score);
+      const targetScore = Math.round(scoreResults.score);
+      console.log('V3PopupCore: Target score for animation:', targetScore);
+
+      if (scoreElement) {
+        // Reset font size in case it was changed during loading
+        scoreElement.style.fontSize = '';
+
+        // Use synchronized animation for perfect sync between counter and circle
+        if (progressCircle) {
+          console.log('V3PopupCore: Starting synchronized animation');
+          this.animateSynchronizedScore(scoreElement, progressCircle, targetScore);
+        } else {
+          console.log('V3PopupCore: No progress circle found, using score counter only');
+          // Fallback to score counter only if no progress circle
+          this.animateScoreCounter(scoreElement, targetScore);
+        }
+      } else {
+        console.error('V3PopupCore: No scoreElement found in DOM');
+      }
+    } else {
+      console.warn('V3PopupCore: No valid score found in results:', {
+        hasScoreResults: !!scoreResults,
+        scoreValue: scoreResults?.score,
+        scoreType: typeof scoreResults?.score
+      });
+    }
+
+    // Update insights/reasons
+    const reasonsList = document.getElementById('scoreReasonsList');
+    console.log('V3PopupCore: Updating insights:', {
+      hasReasonsList: !!reasonsList,
+      hasInsights: !!scoreResults?.insights,
+      insightsType: typeof scoreResults?.insights,
+      insightsLength: Array.isArray(scoreResults?.insights) ? scoreResults.insights.length : 'not array',
+      insights: scoreResults?.insights
+    });
+
+    if (reasonsList && scoreResults && Array.isArray(scoreResults.insights)) {
+      console.log('V3PopupCore: Clearing and populating insights list');
+      reasonsList.innerHTML = '';
+      scoreResults.insights.forEach((insight, index) => {
+        console.log(`V3PopupCore: Adding insight ${index}:`, insight);
+        const li = document.createElement('li');
+        li.textContent = insight;
+        li.className = 'text-slate-600 text-xs font-normal leading-relaxed';
+        reasonsList.appendChild(li);
+      });
+      console.log('V3PopupCore: Insights populated successfully');
+    } else {
+      console.warn('V3PopupCore: Cannot update insights - missing elements or data');
+    }
+
+    // Update timing metadata
+    if (scoreResults.metadata) {
+      const analysisTimeElement = document.getElementById('analysis-time');
+      if (analysisTimeElement && scoreResults.metadata.processingTime) {
+        const duration = Date.now() - scoreResults.metadata.processingTime;
+        analysisTimeElement.textContent = `Analysis completed in ${Math.round(duration / 1000)}s`;
+      }
+    }
+  }
+
+
 
   /**
    * Show analysis results
@@ -710,17 +835,22 @@ class V3PopupCore {
         e.preventDefault();
         console.log('V3PopupCore: My Profile navigation clicked');
 
-        // Get user profile data from storage and show user profile view
+        // Get user profile data from StateManager (same pattern as determineInitialView)
         try {
-          const result = await chrome.storage.local.get(['userProfile']);
-          if (result.userProfile) {
-            await this.showUserProfileView(result.userProfile);
+          let userProfile = null;
+          if (this.services.stateManager) {
+            userProfile = this.services.stateManager.getState('user.profile');
+          }
+
+          if (userProfile) {
+            await this.showUserProfileView(userProfile);
           } else {
-            console.warn('V3PopupCore: No user profile data found for navigation');
-            await this.showIdleView({});
+            console.warn('V3PopupCore: No user profile found in StateManager');
+            await this.showIdleView(userProfile || {});
           }
         } catch (error) {
           console.error('V3PopupCore: Error loading user profile for navigation:', error);
+          await this.showIdleView({});
         }
       });
       console.log('V3PopupCore: My Profile navigation handler attached');
@@ -814,6 +944,14 @@ class V3PopupCore {
    * @param {number} targetScore - Target score value
    */
   animateSynchronizedScore(scoreElement, circleElement, targetScore) {
+    console.log('V3PopupCore: Starting synchronized animation', {
+      scoreElement: !!scoreElement,
+      circleElement: !!circleElement,
+      targetScore,
+      scoreElementId: scoreElement?.id,
+      circleElementId: circleElement?.id
+    });
+
     const duration = 2000; // 2 seconds
     const startTime = performance.now(); // Shared timing source
     const startScore = 0;
@@ -1148,6 +1286,8 @@ class V3PopupCore {
   }
 
   async loadView(viewName, callback) {
+    console.log(`V3PopupCore: Loading view "${viewName}"`);
+
     try {
       const response = await fetch(`../../ui/${viewName}.html`);
       if (!response.ok) {
@@ -1251,6 +1391,14 @@ class V3PopupCore {
   }
 
   populateIdleView(profile) {
+    console.log('V3PopupCore: Populating idle view with profile:', profile);
+
+    // Enhanced validation
+    if (!profile || typeof profile !== 'object') {
+      console.warn('V3PopupCore: No valid profile data for idle view');
+      profile = {}; // Safe fallback
+    }
+
     // Populate idle view with user info
     this.populateUserProfile(profile);
 
