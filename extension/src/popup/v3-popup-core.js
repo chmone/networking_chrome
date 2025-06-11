@@ -880,9 +880,9 @@ class V3PopupCore {
       const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed / duration, 1);
 
-      // Use easeOutCubic for smooth deceleration
-      const easeProgress = 1 - Math.pow(1 - progress, 3);
-      const currentScore = Math.round(startScore + (targetScore - startScore) * easeProgress);
+      // Use linear progress for steady speed
+      const linearProgress = progress;
+      const currentScore = Math.round(startScore + (targetScore - startScore) * linearProgress);
 
       element.textContent = currentScore;
 
@@ -922,9 +922,9 @@ class V3PopupCore {
       const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed / duration, 1);
 
-      // Use easeOutCubic for smooth deceleration
-      const easeProgress = 1 - Math.pow(1 - progress, 3);
-      const currentOffset = circumference - (circumference * (targetScore / 100) * easeProgress);
+      // Use linear progress for steady speed
+      const linearProgress = progress;
+      const currentOffset = circumference - (circumference * (targetScore / 100) * linearProgress);
 
       circle.style.strokeDashoffset = currentOffset;
       circle.style.stroke = targetColor;
@@ -975,15 +975,15 @@ class V3PopupCore {
       const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed / duration, 1);
 
-      // Use easeOutCubic for smooth deceleration (same for both)
-      const easeProgress = 1 - Math.pow(1 - progress, 3);
+      // Use linear progress for steady speed (no easing curve)
+      const linearProgress = progress;
 
       // Update score counter
-      const currentScore = Math.round(startScore + (targetScore - startScore) * easeProgress);
+      const currentScore = Math.round(startScore + (targetScore - startScore) * linearProgress);
       scoreElement.textContent = currentScore;
 
-      // Update progress circle (synchronized with same easeProgress)
-      const currentOffset = circumference - (circumference * (targetScore / 100) * easeProgress);
+      // Update progress circle (synchronized with same linearProgress)
+      const currentOffset = circumference - (circumference * (targetScore / 100) * linearProgress);
       circleElement.style.strokeDashoffset = currentOffset;
       circleElement.style.stroke = targetColor;
 
