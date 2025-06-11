@@ -78,15 +78,26 @@ class V3PopupCore {
     // Initialize independent services in parallel for better performance
     const independentServicePromises = [];
 
-    // Initialize diagnostic service (independent)
+    // Initialize diagnostic service (independent) - FIXED: Properly assign instance
     if (window.DiagnosticService) {
       independentServicePromises.push(
-        new window.DiagnosticService().initialize(true).then(service => {
-          this.services.diagnosticService = service;
-          console.log('V3PopupCore: Diagnostic service initialized');
-        }).catch(error => {
-          console.warn('V3PopupCore: Failed to initialize diagnostic service:', error);
-        })
+        (async () => {
+          try {
+            const diagnosticService = new window.DiagnosticService();
+            const initSuccess = await diagnosticService.initialize(true);
+
+            if (initSuccess) {
+              this.services.diagnosticService = diagnosticService; // Assign actual instance
+              console.log('V3PopupCore: Diagnostic service initialized successfully');
+            } else {
+              console.warn('V3PopupCore: Diagnostic service initialization returned false');
+            }
+
+          } catch (error) {
+            console.warn('V3PopupCore: Failed to initialize diagnostic service:', error);
+            // Non-critical service - don't re-throw
+          }
+        })()
       );
     }
 
@@ -105,20 +116,39 @@ class V3PopupCore {
       );
     }
 
-    // Initialize state manager (independent)
+    // Initialize state manager (independent) - FIXED: Properly assign instance
     if (window.StateManager) {
       independentServicePromises.push(
-        new window.StateManager().initialize().then(service => {
-          this.services.stateManager = service;
-          console.log('V3PopupCore: State manager initialized');
-        }).catch(error => {
-          console.warn('V3PopupCore: Failed to initialize state manager:', error);
-        })
+        (async () => {
+          try {
+            const stateManager = new window.StateManager();
+            const initSuccess = await stateManager.initialize();
+
+            if (!initSuccess) {
+              throw new Error('StateManager initialization returned false');
+            }
+
+            // Validate instance has required methods
+            if (typeof stateManager.getState !== 'function') {
+              throw new Error('StateManager missing required getState method');
+            }
+
+            this.services.stateManager = stateManager; // Assign actual instance
+            console.log('V3PopupCore: State manager initialized successfully');
+
+          } catch (error) {
+            console.error('V3PopupCore: Failed to initialize state manager:', error);
+            throw error; // Re-throw to fail Promise.all() for critical service
+          }
+        })()
       );
     }
 
     // Wait for all independent services to complete in parallel
     await Promise.all(independentServicePromises);
+
+    // Validate critical services are properly initialized
+    this.validateCriticalServices();
 
     // Initialize data validators
     if (window.DataValidators) {
@@ -148,6 +178,33 @@ class V3PopupCore {
     window.v3Services = this.services;
 
     console.log('V3PopupCore: All services initialized');
+  }
+
+  /**
+   * Validate critical services are properly initialized
+   * @throws {Error} If critical services are missing or invalid
+   */
+  validateCriticalServices() {
+    const criticalServices = ['stateManager'];
+    const missingServices = [];
+
+    for (const serviceName of criticalServices) {
+      const service = this.services[serviceName];
+      if (!service || typeof service !== 'object') {
+        missingServices.push(serviceName);
+      }
+    }
+
+    if (missingServices.length > 0) {
+      throw new Error(`Critical services missing: ${missingServices.join(', ')}`);
+    }
+
+    // Validate StateManager specifically
+    if (typeof this.services.stateManager.getState !== 'function') {
+      throw new Error('StateManager missing required getState method');
+    }
+
+    console.log('V3PopupCore: All critical services validated successfully');
   }
 
   /**
