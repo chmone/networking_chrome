@@ -30,11 +30,7 @@ class StateManager {
         url: null,
         analysisResults: null
       },
-      security: {
-        rateLimitStatus: null,
-        authStatus: null,
-        lastRequestTime: null
-      },
+      // security section removed per user request
       diagnostic: {
         enabled: false,
         logs: [],
@@ -77,8 +73,7 @@ class StateManager {
       // Validate data freshness
       await this.validateDataFreshness();
 
-      // Initialize security status
-      await this.updateSecurityStatus();
+      // Security status removed per user request
 
       console.log('StateManager: Initialized successfully');
       return true;
@@ -431,39 +426,7 @@ class StateManager {
     }
   }
 
-  /**
-   * Update security status
-   * @returns {Promise<boolean>} Success status
-   */
-  async updateSecurityStatus() {
-    try {
-      // Get consent status
-      if (window.consentManager) {
-        const consentStatus = await window.consentManager.getConsentStatus();
-        await this.updateState('user.consent', consentStatus.granted);
-        await this.updateState('user.consentVersion', consentStatus.version);
-      }
-
-      // Get rate limit status
-      if (window.rateLimiter) {
-        const userTier = await window.rateLimiter.getUserTier();
-        const usageStats = await window.rateLimiter.getUsageStats(userTier);
-        await this.updateState('user.tier', userTier);
-        await this.updateState('security.rateLimitStatus', usageStats);
-      }
-
-      // Get auth status
-      if (window.cryptoService) {
-        const authStatus = await window.cryptoService.getAuthStatus();
-        await this.updateState('security.authStatus', authStatus);
-      }
-
-      return true;
-    } catch (error) {
-      console.error('StateManager: Security status update failed:', error);
-      return false;
-    }
-  }
+  // Security status function removed per user request
 
   /**
    * Add diagnostic log entry

@@ -11,7 +11,7 @@ class V3PopupCore {
       stateManager: null,
       consentManager: null,
       rateLimiter: null,
-      cryptoService: null,
+      // cryptoService removed per user request
       n8nService: null,
       analysisService: null,
       diagnosticService: null,
@@ -63,12 +63,10 @@ class V3PopupCore {
    */
   async loadV3Services() {
     const serviceScripts = [
-      '../src/core/security/consent-manager.js',
-      '../src/core/security/rate-limits.js',
-      '../src/utils/crypto.js',
+      // Security files removed per user request
       '../src/utils/avatar-manager.js',
       '../src/popup/components/state-manager.js',
-      '../src/services/n8n-service.js',
+      '../src/services/n8n-service-simple.js',
       '../src/services/analysis-service.js',
       '../src/core/validators.js',
       '../src/utils/logger.js'
@@ -113,21 +111,9 @@ class V3PopupCore {
       await this.services.diagnosticService.initialize(true); // Enable diagnostic mode
     }
 
-    // Initialize crypto service (required for security)
-    if (window.CryptoService) {
-      this.services.cryptoService = new window.CryptoService();
-      await this.services.cryptoService.initialize();
-    }
+    // Crypto service removed per user request
 
-    // Initialize consent manager (required for legal compliance)
-    if (window.ConsentManager) {
-      this.services.consentManager = new window.ConsentManager();
-    }
-
-    // Initialize rate limiter (required for LinkedIn protection)
-    if (window.RateLimiter) {
-      this.services.rateLimiter = new window.RateLimiter();
-    }
+    // Security services removed per user request
 
     // Initialize avatar manager (for random profile images)
     if (window.AvatarManager) {
@@ -148,9 +134,9 @@ class V3PopupCore {
     }
 
     // Initialize N8N service (depends on crypto and state)
-    if (window.N8NService) {
-      this.services.n8nService = new window.N8NService();
-      await this.services.n8nService.initialize();
+    // Use simple N8N service (crypto removed)
+    if (window.SimpleN8NService) {
+      this.services.n8nService = new window.SimpleN8NService();
     }
 
     // Initialize analysis service (orchestrates everything)
@@ -166,37 +152,13 @@ class V3PopupCore {
   }
 
   /**
-   * Check security requirements and user consent
-   * @returns {Promise<boolean>} Security check result
+   * Check basic requirements (simplified without crypto)
+   * @returns {Promise<boolean>} Basic check result
    */
   async checkSecurityRequirements() {
-    console.log('V3PopupCore: Checking security requirements...');
+    console.log('V3PopupCore: Checking basic requirements (crypto system removed)...');
 
-    // Check consent status
-    if (this.services.consentManager) {
-      const hasValidConsent = await this.services.consentManager.hasValidConsent();
-
-      if (!hasValidConsent) {
-        console.log('V3PopupCore: Valid consent required');
-        // Request consent will be handled in determineInitialView
-        return false;
-      }
-    }
-
-    // Check authentication status
-    if (this.services.cryptoService) {
-      const authStatus = await this.services.cryptoService.getAuthStatus();
-      if (!authStatus.initialized) {
-        throw new Error('HMAC authentication not properly initialized');
-      }
-    }
-
-    // Update security status in state
-    if (this.services.stateManager) {
-      await this.services.stateManager.updateSecurityStatus();
-    }
-
-    console.log('V3PopupCore: Security requirements satisfied');
+    // Just check if services are ready
     return true;
   }
 
@@ -208,15 +170,7 @@ class V3PopupCore {
     console.log('V3PopupCore: Determining initial view...');
 
     try {
-      // Check consent first
-      if (this.services.consentManager) {
-        const hasValidConsent = await this.services.consentManager.hasValidConsent();
-
-        if (!hasValidConsent) {
-          await this.showConsentView();
-          return;
-        }
-      }
+      // Consent checking removed per user request
 
       // Check if user profile exists
       let userProfile = null;
@@ -330,16 +284,7 @@ class V3PopupCore {
         return;
       }
 
-      // Check rate limits before proceeding
-      if (this.services.rateLimiter) {
-        const userTier = await this.services.rateLimiter.getUserTier();
-        const limitCheck = await this.services.rateLimiter.checkLimit(userTier);
-
-        if (!limitCheck.allowed) {
-          this.showInputError(`Rate limit exceeded: ${limitCheck.reason}`);
-          return;
-        }
-      }
+      // Rate limiting removed per user request
 
       // Show loading screen
       await this.loadView('initial_loading', () => {

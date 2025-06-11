@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "LinkedIn Insight V3",
   "version": "3.0.0",
-  "description": "Secure AI-powered LinkedIn networking analysis with privacy-first design and HMAC authentication.",
+  "description": "AI-powered LinkedIn networking analysis with intelligent scoring for strategic connections.",
   "default_locale": "en",
   "permissions": [
     "activeTab",
@@ -42,7 +42,6 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "src/core/security/*.js",
         "src/services/*.js",
         "src/utils/*.js",
         "src/popup/components/*.js",

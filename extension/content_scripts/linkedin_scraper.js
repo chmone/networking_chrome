@@ -75,22 +75,36 @@ async function scrapeProfileData() {
     // PRIVACY NOTE: V3 uses random avatars instead of scraping profile images
     console.log('LinkedIn Insight Scraper: Profile image scraping disabled in V3 - using random avatars');
 
+    // Enhanced description/summary scraping with more selectors
     let summary = "Summary not found";
     const aboutSection = mainProfileSection.querySelector('section:has(> div#about)');
     console.log(`LinkedIn Insight Scraper: About section found: ${!!aboutSection}`);
     if (aboutSection) {
       const summarySelectors = [
+        // Most common current selector
         'div[class*="inline-show-more-text"] > span[aria-hidden="true"]:not([class*="see-more-less-text"])',
+        // Alternative selectors for different LinkedIn layouts
         'div.pv-shared-profile-section__description > div > span[aria-hidden="true"]',
+        'div.ph5.pb5 > div > span[aria-hidden="true"]',
+        'div.pv-profile-section__card-item-v2 > span[aria-hidden="true"]',
         'span[class*="visually-hidden"] ~ span',
+        // Direct text content
+        'div[class*="inline-show-more-text"] span',
+        'div.pv-profile-section__card-item-v2',
+        // Try parent divs with text content
+        'div.display-flex.full-width > span'
       ];
       for (const selector of summarySelectors) {
         const summarySpan = aboutSection.querySelector(selector);
         console.log(`LinkedIn Insight Scraper: Summary - trying selector "${selector}" within About section, Found: ${!!summarySpan}`);
         if (summarySpan && summarySpan.innerText.trim()) {
           summary = summarySpan.innerText.trim();
-          console.log(`LinkedIn Insight Scraper: Summary FOUND with selector "${selector}": "${summary}"`);
-          break;
+          // Clean up "Show more"/"See more" text
+          summary = summary.replace(/\n\n(Show more|See more|…see more)$/i, '').trim();
+          if (summary.length > 10) { // Ensure we got meaningful content
+            console.log(`LinkedIn Insight Scraper: Summary FOUND with selector "${selector}": "${summary.substring(0, 100)}..."`);
+            break;
+          }
         }
       }
     } else {
@@ -99,6 +113,72 @@ async function scrapeProfileData() {
     if (summary === "Summary not found") {
       console.warn("LinkedIn Insight Scraper: Summary was NOT FOUND after trying all selectors.");
     }
+
+    // Scrape connections and followers count
+    let connections = "Not found";
+    let followers = "Not found";
+
+    // Try to find connections count
+    const connectionSelectors = [
+      'span:contains("connection")',
+      'span[class*="t-bold"]:contains("connection")',
+      'a[href*="/search/results/people/"]:contains("connection")',
+      'a[href*="degree=1"]:contains("connection")',
+      'section[class*="pv-profile-section"] span:contains("connection")'
+    ];
+
+    for (const selector of connectionSelectors) {
+      try {
+        // Use XPath to find elements containing "connection" text
+        const connectionElements = document.evaluate(
+          `//span[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'connection')]`,
+          mainProfileSection,
+          null,
+          XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE,
+          null
+        );
+
+        for (let i = 0; i < connectionElements.snapshotLength; i++) {
+          const element = connectionElements.snapshotItem(i);
+          const text = element.textContent.trim();
+          const match = text.match(/(\d+[\d,]*)\s*connection/i);
+          if (match) {
+            connections = match[1].replace(/,/g, '');
+            console.log(`LinkedIn Insight Scraper: Connections found: "${connections}"`);
+            break;
+          }
+        }
+        if (connections !== "Not found") break;
+      } catch (e) {
+        console.log(`LinkedIn Insight Scraper: Error with connection selector: ${e.message}`);
+      }
+    }
+
+    // Try to find followers count
+    try {
+      const followerElements = document.evaluate(
+        `//span[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'follower')]`,
+        mainProfileSection,
+        null,
+        XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE,
+        null
+      );
+
+      for (let i = 0; i < followerElements.snapshotLength; i++) {
+        const element = followerElements.snapshotItem(i);
+        const text = element.textContent.trim();
+        const match = text.match(/(\d+[\d,]*)\s*follower/i);
+        if (match) {
+          followers = match[1].replace(/,/g, '');
+          console.log(`LinkedIn Insight Scraper: Followers found: "${followers}"`);
+          break;
+        }
+      }
+    } catch (e) {
+      console.log(`LinkedIn Insight Scraper: Error scraping followers: ${e.message}`);
+    }
+
+    console.log(`LinkedIn Insight Scraper: Network stats - Connections: ${connections}, Followers: ${followers}`);
 
     const experiences = [];
     const experienceSection = await waitForElement('section:has(> div#experience)', 5000, 500, mainProfileSection);
@@ -231,6 +311,8 @@ async function scrapeProfileData() {
       headline,
       location,
       summary,
+      connections,
+      followers,
       experiences,
       licenses,
       education,

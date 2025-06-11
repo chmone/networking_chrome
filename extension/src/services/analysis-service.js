@@ -132,13 +132,10 @@ class AnalysisService {
     try {
       // Step 1: Check consent and security requirements
       await this.executeStep('consent_check', async () => {
-        await this.checkConsentAndSecurity();
+        // Security checks removed per user request
       });
 
-      // Step 2: Check rate limits
-      await this.executeStep('rate_limit_check', async () => {
-        await this.checkRateLimits();
-      });
+      // Rate limit checking removed per user request
 
       // Step 3: Get fresh user profile data
       await this.executeStep('user_profile_scraping', async () => {
@@ -240,65 +237,9 @@ class AnalysisService {
     }
   }
 
-  /**
-   * Check consent and security requirements
-   * @returns {Promise<boolean>} Consent status
-   */
-  async checkConsentAndSecurity() {
-    console.log('AnalysisService: Checking consent and security...');
+  // Consent and security function removed per user request
 
-    // Check consent
-    if (window.consentManager) {
-      const hasConsent = await window.consentManager.hasValidConsent();
-      if (!hasConsent) {
-        // Request consent
-        const consentGranted = await window.consentManager.requestConsent();
-        if (!consentGranted) {
-          throw new Error('User consent required to proceed with analysis');
-        }
-      }
-    }
-
-    // Update security status
-    if (window.stateManager) {
-      await window.stateManager.updateSecurityStatus();
-    }
-
-    return true;
-  }
-
-  /**
-   * Check rate limits
-   * @returns {Promise<boolean>} Rate limit status
-   */
-  async checkRateLimits() {
-    console.log('AnalysisService: Checking rate limits...');
-
-    if (window.rateLimiter) {
-      const userTier = await window.rateLimiter.getUserTier();
-      const limitCheck = await window.rateLimiter.checkLimit(userTier);
-
-      if (!limitCheck.allowed) {
-        let errorMessage = 'Rate limit exceeded: ';
-        switch (limitCheck.reason) {
-          case 'daily_limit_exceeded':
-            errorMessage += `Daily limit of ${limitCheck.limit} profiles reached. Resets in ${Math.ceil(limitCheck.timeUntilReset / (1000 * 60 * 60))} hours.`;
-            break;
-          case 'request_too_soon':
-            errorMessage += `Please wait ${Math.ceil(limitCheck.waitTime / 1000)} seconds before next request.`;
-            break;
-          case 'consecutive_limit_exceeded':
-            errorMessage += 'Take a break! Too many consecutive requests.';
-            break;
-          default:
-            errorMessage += limitCheck.reason;
-        }
-        throw new Error(errorMessage);
-      }
-    }
-
-    return true;
-  }
+  // Rate limits function removed per user request
 
   /**
    * Ensure fresh user profile data
