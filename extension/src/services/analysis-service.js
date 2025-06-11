@@ -422,9 +422,13 @@ class AnalysisService {
     const n8nData = await window.stateManager.prepareN8NData();
 
     // Send to N8N for analysis
+    console.log('AnalysisService: Calling N8N service with data:', n8nData);
     const analysisResults = await window.simpleN8nService.sendAnalysisRequest(n8nData);
 
     console.log('AnalysisService: N8N analysis completed successfully');
+    console.log('AnalysisService: Raw N8N results received:', analysisResults);
+    console.log('AnalysisService: N8N returned score:', analysisResults?.score, typeof analysisResults?.score);
+    console.log('AnalysisService: N8N returned insights:', analysisResults?.insights, Array.isArray(analysisResults?.insights));
     return analysisResults;
   }
 
@@ -437,6 +441,10 @@ class AnalysisService {
 
     // Get analysis results from N8N
     const rawResults = this.currentAnalysis.steps.find(s => s.name === 'n8n_analysis')?.result;
+
+    console.log('AnalysisService: Found raw results from N8N step:', rawResults);
+    console.log('AnalysisService: Raw results score:', rawResults?.score, typeof rawResults?.score);
+    console.log('AnalysisService: Raw results insights:', rawResults?.insights, Array.isArray(rawResults?.insights));
 
     if (!rawResults) {
       throw new Error('No analysis results to process');
@@ -455,6 +463,10 @@ class AnalysisService {
       userProfile: window.stateManager?.getState('user.profile'),
       targetProfile: window.stateManager?.getState('target.profile')
     };
+
+    console.log('AnalysisService: Processed results:', processedResults);
+    console.log('AnalysisService: Final score:', processedResults.score, typeof processedResults.score);
+    console.log('AnalysisService: Final insights:', processedResults.insights, Array.isArray(processedResults.insights));
 
     // Store results in state
     if (window.stateManager) {
