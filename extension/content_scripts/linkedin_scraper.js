@@ -31,12 +31,67 @@ async function waitForElement(selector, timeout = 5000, interval = 500, context 
 }
 
 /**
+ * Wait for LinkedIn profile to be completely loaded
+ * @param {number} timeout - Maximum wait time in milliseconds
+ * @returns {Promise<boolean>} Profile loading completion status
+ */
+async function waitForProfileComplete(timeout = 10000) {
+  console.log('LinkedIn Insight Scraper: Waiting for profile to fully load...');
+
+  const startTime = Date.now();
+  let lastElementCount = 0;
+  let stableCount = 0;
+  const STABILITY_THRESHOLD = 3; // Number of checks with same element count
+
+  while (Date.now() - startTime < timeout) {
+    // Check for key profile elements that indicate full loading
+    const profileElements = document.querySelectorAll(
+      '.scaffold-layout, h1, .text-body-medium, section, .artdeco-card, .pv-text-details__left-panel'
+    );
+
+    const currentElementCount = profileElements.length;
+
+    // Check if element count is stable (not increasing)
+    if (currentElementCount === lastElementCount && currentElementCount > 0) {
+      stableCount++;
+      if (stableCount >= STABILITY_THRESHOLD) {
+        console.log(`LinkedIn Insight Scraper: Profile appears fully loaded (${currentElementCount} elements stable)`);
+        return true;
+      }
+    } else {
+      stableCount = 0;
+      lastElementCount = currentElementCount;
+    }
+
+    // Additional check for LinkedIn-specific loading indicators
+    const isLinkedInLoading = document.querySelector('.feed-shared-update-v2__content .artdeco-loader, .application-outlet .artdeco-loader');
+    if (isLinkedInLoading) {
+      console.log('LinkedIn Insight Scraper: LinkedIn loading indicator still visible, continuing to wait...');
+      stableCount = 0; // Reset stability if still loading
+    }
+
+    // Wait before next check
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  }
+
+  console.warn('LinkedIn Insight Scraper: Profile loading timeout reached');
+  return false;
+}
+
+/**
  * Extracts profile data from the current LinkedIn profile page.
  * @returns {object|null} An object containing name, headline, and summary, or null if critical elements are missing.
  */
 async function scrapeProfileData() {
   try {
     console.log("LinkedIn Insight Scraper: scrapeProfileData() called.");
+
+    // Wait for profile to be completely loaded before scraping
+    const isLoaded = await waitForProfileComplete();
+    if (!isLoaded) {
+      console.warn('LinkedIn Insight Scraper: Profile may not be fully loaded, proceeding anyway...');
+    }
+
     const mainProfileSection = await waitForElement('.scaffold-layout', 7000);
 
     if (!mainProfileSection) {
@@ -92,7 +147,16 @@ async function scrapeProfileData() {
         'div[class*="inline-show-more-text"] span',
         'div.pv-profile-section__card-item-v2',
         // Try parent divs with text content
-        'div.display-flex.full-width > span'
+        'div.display-flex.full-width > span',
+        // Enhanced 2024 LinkedIn selectors
+        'section[data-section="summary"] span[aria-hidden="true"]',
+        'div.pv-about-section span[aria-hidden="true"]',
+        'div[class*="summary"] span[aria-hidden="true"]',
+        'div[data-section="summary"] span[aria-hidden="true"]',
+        // Additional modern LinkedIn patterns
+        'div.pvs-entity__description span[aria-hidden="true"]',
+        'div.artdeco-card > div > div > span[aria-hidden="true"]',
+        'section.artdeco-card div.break-words span[aria-hidden="true"]'
       ];
       for (const selector of summarySelectors) {
         const summarySpan = aboutSection.querySelector(selector);

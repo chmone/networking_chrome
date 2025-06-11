@@ -16,7 +16,7 @@ class AvatarManager {
    */
   async loadAvatarConfig() {
     try {
-      const response = await fetch('../ui/images.json');
+      const response = await fetch('../../ui/images.json');
       if (response.ok) {
         this.avatarConfig = await response.json();
         console.log('AvatarManager: Avatar config loaded successfully');

@@ -107,6 +107,13 @@ class V3PopupCore {
     // Use simple N8N service (crypto removed)
     if (window.SimpleN8NService) {
       this.services.n8nService = new window.SimpleN8NService();
+      await this.services.n8nService.initialize();
+
+      // Make available globally for analysis service compatibility
+      window.simpleN8nService = this.services.n8nService;
+      console.log('V3PopupCore: Simple N8N service loaded and made available globally');
+    } else {
+      console.error('V3PopupCore: SimpleN8NService not found - N8N communication will fail');
     }
 
     // Initialize analysis service (orchestrates everything)
@@ -229,7 +236,7 @@ class V3PopupCore {
    * Set up handlers for initial setup
    */
   setupInitialSetupHandlers() {
-    const getStartedButton = document.getElementById('get-started-btn');
+    const getStartedButton = document.getElementById('getStartedButton');
     if (getStartedButton) {
       getStartedButton.addEventListener('click', () => {
         this.handleInitialSetup();
@@ -243,7 +250,7 @@ class V3PopupCore {
    */
   async handleInitialSetup() {
     try {
-      console.log('V3PopupCore: Starting initial setup...');
+      console.log('V3PopupCore: Starting initial setup with profile capture...');
 
       // Get LinkedIn URL from input
       const linkedInUrlInput = document.getElementById('linkedin-url');
@@ -260,6 +267,41 @@ class V3PopupCore {
       await this.loadView('initial_loading', () => {
         this.setupAndAnimateLoadingScreen('loading');
       });
+
+      try {
+        // NEW: Scrape user's LinkedIn profile
+        const userProfile = await this.scrapeUserProfile(userLinkedInUrl);
+
+        if (!userProfile || !userProfile.name) {
+          throw new Error('Failed to scrape user profile data');
+        }
+
+        // Store user profile in state manager
+        if (this.services.stateManager) {
+          await this.services.stateManager.updateState('user.profile', userProfile);
+          console.log('V3PopupCore: User profile stored successfully:', userProfile);
+        }
+
+        // Show success and navigate to idle view
+        await this.showIdleView(userProfile);
+
+      } catch (profileError) {
+        console.error('V3PopupCore: Profile scraping failed:', profileError);
+
+        // Fallback: Create basic profile from URL
+        const fallbackProfile = {
+          name: "User", // Will be updated when they visit their profile
+          headline: "LinkedIn User",
+          location: "Unknown",
+          summary: "Profile data will be updated on next visit",
+          linkedInUrl: userLinkedInUrl
+        };
+
+        if (this.services.stateManager) {
+          await this.services.stateManager.updateState('user.profile', fallbackProfile);
+        }
+        await this.showIdleView(fallbackProfile);
+      }
 
       // Navigate to user's LinkedIn profile
       const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -293,6 +335,46 @@ class V3PopupCore {
     } catch (error) {
       console.error('V3PopupCore: Initial setup failed:', error);
       await this.showErrorView('Setup Failed', error.message);
+    }
+  }
+
+  /**
+   * Scrape user's own LinkedIn profile during initial setup
+   * @param {string} userLinkedInUrl - User's LinkedIn profile URL
+   * @returns {Promise<Object>} User profile data
+   */
+  async scrapeUserProfile(userLinkedInUrl) {
+    try {
+      console.log('V3PopupCore: Scraping user profile for initial setup...');
+
+      // Find or create tab with user's LinkedIn profile
+      const tabs = await chrome.tabs.query({ url: '*://www.linkedin.com/in/*' });
+      let userTab = tabs.find(tab => tab.url === userLinkedInUrl);
+
+      if (!userTab) {
+        // Create new tab with user's profile
+        userTab = await chrome.tabs.create({
+          url: userLinkedInUrl,
+          active: false // Don't switch to the tab
+        });
+
+        // Wait for tab to load
+        await this.waitForTabLoad(userTab.id);
+      }
+
+      // Scrape profile data
+      const userProfile = await this.scrapeAndValidateProfile(userTab.id, 'user');
+
+      // Close tab if we created it
+      if (!tabs.some(tab => tab.url === userLinkedInUrl)) {
+        await chrome.tabs.remove(userTab.id);
+      }
+
+      return userProfile;
+
+    } catch (error) {
+      console.error('V3PopupCore: User profile scraping failed:', error);
+      throw error;
     }
   }
 
@@ -468,6 +550,110 @@ class V3PopupCore {
         const duration = Date.now() - results.metadata.processingTime;
         analysisTimeElement.textContent = `Analysis completed in ${Math.round(duration / 1000)}s`;
       }
+    }
+
+    // Setup event handlers for score screen UI elements
+    this.setupScoreScreenEventHandlers();
+  }
+
+  /**
+   * Setup event handlers for score screen UI elements
+   */
+  setupScoreScreenEventHandlers() {
+    console.log('V3PopupCore: Setting up score screen event handlers...');
+
+    // View Scraped Information button toggle
+    const scrapedInfoBtn = document.getElementById('scrapedInfoButton');
+    const scrapedDetailsSection = document.getElementById('scrapedDetailsSection');
+
+    if (scrapedInfoBtn && scrapedDetailsSection) {
+      scrapedInfoBtn.addEventListener('click', () => {
+        const isHidden = scrapedDetailsSection.classList.contains('hidden');
+        scrapedDetailsSection.classList.toggle('hidden');
+        scrapedInfoBtn.textContent = isHidden ? 'Hide Scraped Information' : 'View Scraped Information';
+        console.log('V3PopupCore: Scraped info section toggled, visible:', !scrapedDetailsSection.classList.contains('hidden'));
+      });
+      console.log('V3PopupCore: Scraped info button event handler attached');
+    } else {
+      console.warn('V3PopupCore: Could not find scrapedInfoButton or scrapedDetailsSection');
+    }
+
+    // Setup menu dropdown
+    this.setupMenuDropdown();
+
+    // Setup navigation handlers
+    this.setupNavigationHandlers();
+  }
+
+  /**
+   * Setup menu dropdown functionality
+   */
+  setupMenuDropdown() {
+    const menuToggleButton = document.getElementById('menuToggleButton');
+    const menuDropdown = document.getElementById('menuDropdown');
+
+    if (menuToggleButton && menuDropdown) {
+      // Toggle menu on click
+      menuToggleButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        menuDropdown.classList.toggle('hidden');
+        menuToggleButton.setAttribute('aria-expanded',
+          menuDropdown.classList.contains('hidden') ? 'false' : 'true');
+        console.log('V3PopupCore: Menu dropdown toggled, visible:', !menuDropdown.classList.contains('hidden'));
+      });
+
+      // Close menu when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!menuToggleButton.contains(e.target) && !menuDropdown.contains(e.target)) {
+          if (!menuDropdown.classList.contains('hidden')) {
+            menuDropdown.classList.add('hidden');
+            menuToggleButton.setAttribute('aria-expanded', 'false');
+            console.log('V3PopupCore: Menu dropdown closed by outside click');
+          }
+        }
+      });
+
+      console.log('V3PopupCore: Menu dropdown event handlers attached');
+    } else {
+      console.warn('V3PopupCore: Could not find menuToggleButton or menuDropdown');
+    }
+  }
+
+  /**
+   * Setup navigation event handlers
+   */
+  setupNavigationHandlers() {
+    const navMyProfileLink = document.getElementById('navMyProfileLink');
+    const navSettingsLink = document.getElementById('navSettingsLink');
+
+    if (navMyProfileLink) {
+      navMyProfileLink.addEventListener('click', async (e) => {
+        e.preventDefault();
+        console.log('V3PopupCore: My Profile navigation clicked');
+
+        // Get user profile data from storage and show user profile view
+        try {
+          const result = await chrome.storage.local.get(['userProfile']);
+          if (result.userProfile) {
+            await this.showUserProfileView(result.userProfile);
+          } else {
+            console.warn('V3PopupCore: No user profile data found for navigation');
+            await this.showIdleView({});
+          }
+        } catch (error) {
+          console.error('V3PopupCore: Error loading user profile for navigation:', error);
+        }
+      });
+      console.log('V3PopupCore: My Profile navigation handler attached');
+    }
+
+    if (navSettingsLink) {
+      navSettingsLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        console.log('V3PopupCore: Settings navigation clicked');
+        chrome.tabs.create({ url: chrome.runtime.getURL('settings/settings.html') });
+      });
+      console.log('V3PopupCore: Settings navigation handler attached');
     }
   }
 
@@ -834,7 +1020,7 @@ class V3PopupCore {
 
   async loadView(viewName, callback) {
     try {
-      const response = await fetch(`../ui/${viewName}.html`);
+      const response = await fetch(`../../ui/${viewName}.html`);
       if (!response.ok) {
         throw new Error(`Failed to load ${viewName}.html`);
       }
