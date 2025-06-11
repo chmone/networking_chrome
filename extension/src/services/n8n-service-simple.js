@@ -141,18 +141,25 @@ class SimpleN8NService {
       throw new Error('Invalid response format from N8N');
     }
 
-    // Extract score and insights with enhanced validation
-    let score = 0;
-    if (typeof response.score === 'number') {
-      score = response.score;
-    } else if (typeof response.score === 'string' && !isNaN(response.score)) {
-      score = parseInt(response.score);
-      console.log('SimpleN8NService: Converted string score to number:', score);
-    } else {
-      console.warn('SimpleN8NService: No valid score found in response:', response.score);
+    // Handle N8N array response format: [{"output": {"score": 72, "insights": [...]}}]
+    let dataObject = response;
+    if (Array.isArray(response) && response.length > 0 && response[0].output) {
+      console.log('SimpleN8NService: Detected N8N array format, extracting from output');
+      dataObject = response[0].output;
     }
 
-    const insights = Array.isArray(response.insights) ? response.insights : [];
+    // Extract score and insights with enhanced validation
+    let score = 0;
+    if (typeof dataObject.score === 'number') {
+      score = dataObject.score;
+    } else if (typeof dataObject.score === 'string' && !isNaN(dataObject.score)) {
+      score = parseInt(dataObject.score);
+      console.log('SimpleN8NService: Converted string score to number:', score);
+    } else {
+      console.warn('SimpleN8NService: No valid score found in response:', dataObject.score);
+    }
+
+    const insights = Array.isArray(dataObject.insights) ? dataObject.insights : [];
     console.log('SimpleN8NService: Extracted score:', score, 'insights:', insights.length);
 
     // Detect placeholder insights (indicates integration issue)
@@ -175,9 +182,9 @@ class SimpleN8NService {
     const results = {
       score: Math.max(0, Math.min(100, score)), // Clamp to 0-100
       insights: insights,
-      metadata: response.metadata || {},
+      metadata: dataObject.metadata || {},
       timestamp: Date.now(),
-      requestId: response.requestId || 'unknown'
+      requestId: dataObject.requestId || response.requestId || 'unknown'
     };
 
     console.log('SimpleN8NService: Formatted results with real insights:', results);
