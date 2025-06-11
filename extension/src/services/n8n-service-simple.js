@@ -64,9 +64,9 @@ class SimpleN8NService {
       console.log('SimpleN8NService: Received initial response from N8N:', response);
 
       // Check if synchronous response (has score) or async (has requestId)
-      if (response.score !== undefined && Array.isArray(response.insights) && response.insights.length > 0) {
-        // N8N returned complete results with real insights
-        console.log('SimpleN8NService: Complete synchronous response detected with insights');
+      if (response.score !== undefined) {
+        // N8N returned a score - treat as synchronous complete response
+        console.log('SimpleN8NService: Response with score detected, treating as complete');
         return this.validateAndFormatResponse(response);
       } else if (response.requestId && !response.score) {
         // Asynchronous processing - wait for real completion
@@ -111,8 +111,11 @@ class SimpleN8NService {
         // Get response data
         const responseData = await response.json();
         console.log('SimpleN8NService: REAL N8N RESPONSE:', JSON.stringify(responseData, null, 2));
-        console.log('SimpleN8NService: Response has insights:', Array.isArray(responseData.insights));
-        console.log('SimpleN8NService: Response has score:', typeof responseData.score);
+        console.log('SimpleN8NService: Response structure analysis:');
+        console.log('- Score value:', responseData.score, typeof responseData.score);
+        console.log('- Insights:', responseData.insights, Array.isArray(responseData.insights));
+        console.log('- Request ID:', responseData.requestId);
+        console.log('- Response keys:', Object.keys(responseData));
         return responseData;
 
       } catch (error) {
@@ -138,9 +141,19 @@ class SimpleN8NService {
       throw new Error('Invalid response format from N8N');
     }
 
-    // Extract score and insights
-    const score = typeof response.score === 'number' ? response.score : 0;
+    // Extract score and insights with enhanced validation
+    let score = 0;
+    if (typeof response.score === 'number') {
+      score = response.score;
+    } else if (typeof response.score === 'string' && !isNaN(response.score)) {
+      score = parseInt(response.score);
+      console.log('SimpleN8NService: Converted string score to number:', score);
+    } else {
+      console.warn('SimpleN8NService: No valid score found in response:', response.score);
+    }
+
     const insights = Array.isArray(response.insights) ? response.insights : [];
+    console.log('SimpleN8NService: Extracted score:', score, 'insights:', insights.length);
 
     // Detect placeholder insights (indicates integration issue)
     if (insights.length > 0 && insights[0].includes("Strong industry alignment detected")) {
