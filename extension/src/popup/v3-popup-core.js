@@ -342,75 +342,45 @@ class V3PopupCore {
 
       // Rate limiting removed per user request
 
-      // Show loading screen
+      // 1) Show loading screen immediately
       await this.loadView('initial_loading', () => {
         this.setupAndAnimateLoadingScreen('loading');
       });
 
-      try {
-        // NEW: Scrape user's LinkedIn profile
-        const userProfile = await this.scrapeUserProfile(userLinkedInUrl);
+      // 2) Navigate current active tab (or create new one) to user's LinkedIn profile
+      const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
-        if (!userProfile || !userProfile.name) {
-          throw new Error('Failed to scrape user profile data');
-        }
+      if (activeTab) {
+        await chrome.tabs.update(activeTab.id, { url: userLinkedInUrl, active: true });
+        // Wait for navigation to complete
+        await this.waitForTabLoad(activeTab.id);
+        // Ensure the user sees the profile page immediately
+        console.log('V3PopupCore: Navigated to LinkedIn profile tab and waiting for load');
 
-        // Store user profile in state manager
+        // 3) Scrape profile in the now-loaded active tab
+        const userProfile = await this.scrapeAndValidateProfile(activeTab.id, 'user');
+
+        // 4) Store profile in state manager
         if (this.services.stateManager) {
-          await this.services.stateManager.updateState('user.profile', userProfile);
-          console.log('V3PopupCore: User profile stored successfully:', userProfile);
+          await this.services.stateManager.updateUserProfile(userProfile, true);
         }
 
-        // Show success and navigate to idle view
-        await this.showIdleView(userProfile);
+        // Persist settings
+        await chrome.storage.local.set({
+          userLinkedInUrl,
+          appSettings: {
+            userLinkedInUrl,
+            n8nUrl: this.services.n8nService ? await this.services.n8nService.getWebhookUrl() : null
+          }
+        });
 
-      } catch (profileError) {
-        console.error('V3PopupCore: Profile scraping failed:', profileError);
+        console.log('V3PopupCore: Initial setup completed successfully');
 
-        // Fallback: Create basic profile from URL
-        const fallbackProfile = {
-          name: "User", // Will be updated when they visit their profile
-          headline: "LinkedIn User",
-          location: "Unknown",
-          summary: "Profile data will be updated on next visit",
-          linkedInUrl: userLinkedInUrl
-        };
-
-        if (this.services.stateManager) {
-          await this.services.stateManager.updateState('user.profile', fallbackProfile);
-        }
-        await this.showIdleView(fallbackProfile);
+        // 5) Transition to main interface (idle view)
+        await this.showUserProfileView(userProfile);
+      } else {
+        throw new Error('No active tab found to navigate');
       }
-
-      // Navigate to user's LinkedIn profile
-      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-      const currentTab = tabs[0];
-
-      await chrome.tabs.update(currentTab.id, { url: userLinkedInUrl });
-
-      // Wait for navigation and scrape user profile
-      await this.waitForTabLoad(currentTab.id);
-
-      // Scrape user profile with V3 validation
-      const userProfile = await this.scrapeAndValidateProfile(currentTab.id, 'user');
-
-      // Store user profile and LinkedIn URL
-      if (this.services.stateManager) {
-        await this.services.stateManager.updateUserProfile(userProfile, true);
-      }
-
-      await chrome.storage.local.set({
-        userLinkedInUrl: userLinkedInUrl,
-        appSettings: {
-          userLinkedInUrl: userLinkedInUrl,
-          n8nUrl: this.services.n8nService ? await this.services.n8nService.getWebhookUrl() : null
-        }
-      });
-
-      console.log('V3PopupCore: Initial setup completed successfully');
-
-      // Show success and transition to main interface
-      await this.showUserProfileView(userProfile);
     } catch (error) {
       console.error('V3PopupCore: Initial setup failed:', error);
       await this.showErrorView('Setup Failed', error.message);
@@ -567,8 +537,6 @@ class V3PopupCore {
     return scrapedData;
   }
 
-
-
   /**
    * Show final analysis results (single transition from loading to score screen)
    * @param {Object} analysisResults - Complete analysis results
@@ -673,8 +641,6 @@ class V3PopupCore {
       }
     }
   }
-
-
 
   /**
    * Show analysis results
