@@ -929,9 +929,9 @@ class V3PopupCore {
 
     // Color based on target score
     let targetColor;
-    if (targetScore >= 80) {
+    if (targetScore >= 66) {
       targetColor = '#10b981'; // green
-    } else if (targetScore >= 60) {
+    } else if (targetScore >= 41) {
       targetColor = '#f59e0b'; // yellow  
     } else {
       targetColor = '#ef4444'; // red
@@ -941,15 +941,15 @@ class V3PopupCore {
       const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed / duration, 1);
 
-      // Use linear progress for steady speed (no easing curve)
-      const linearProgress = progress;
+      // Use a cubic ease-out function for a smooth deceleration
+      const easedProgress = 1 - Math.pow(1 - progress, 3);
 
       // Update score counter
-      const currentScore = Math.round(startScore + (targetScore - startScore) * linearProgress);
+      const currentScore = Math.round(startScore + (targetScore - startScore) * easedProgress);
       scoreElement.textContent = currentScore;
 
-      // Update progress circle (synchronized with same linearProgress)
-      const currentOffset = circumference - (circumference * (targetScore / 100) * linearProgress);
+      // Update progress circle (synchronized with the same eased progress)
+      const currentOffset = circumference - (circumference * (targetScore / 100) * easedProgress);
       circleElement.style.strokeDashoffset = currentOffset;
       circleElement.style.stroke = targetColor;
 
