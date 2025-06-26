@@ -473,7 +473,7 @@ class V3PopupCore {
 
       // Step 4: Show final results (single transition from loading to final score)
       console.log('V3PopupCore: Showing final results...');
-      await this.showFinalResults(analysisResults);
+      await this.showFinalResults(analysisResults.data);
 
       console.log('V3PopupCore: Target analysis completed successfully');
     } catch (error) {
@@ -1047,21 +1047,7 @@ class V3PopupCore {
    * Set up diagnostic panel for debugging
    */
   setupDiagnosticPanel() {
-    // Add diagnostic toggle button
-    const diagnosticToggle = document.createElement('button');
-    diagnosticToggle.id = 'diagnostic-toggle';
-    diagnosticToggle.textContent = '🔧';
-    diagnosticToggle.style.cssText = `
-      position: fixed; top: 10px; right: 10px; z-index: 9999;
-      background: #007bb5; color: white; border: none; 
-      border-radius: 50%; width: 30px; height: 30px; cursor: pointer;
-    `;
-
-    diagnosticToggle.addEventListener('click', () => {
-      this.toggleDiagnosticPanel();
-    });
-
-    document.body.appendChild(diagnosticToggle);
+    // This function is now empty to prevent the wrench icon from being created.
   }
 
   /**
@@ -1168,38 +1154,6 @@ class V3PopupCore {
       console.error('❌ N8N Connection Test Failed:', error);
       alert(`N8N Test Failed: ${error.message}`);
     }
-  }
-
-  /**
-   * Toggle diagnostic panel
-   */
-  async toggleDiagnosticPanel() {
-    const existingPanel = document.getElementById('diagnostic-panel');
-
-    if (existingPanel) {
-      existingPanel.remove();
-      return;
-    }
-
-    // Create diagnostic panel
-    const panel = document.createElement('div');
-    panel.id = 'diagnostic-panel';
-    panel.style.cssText = `
-      position: fixed; top: 50px; right: 10px; width: 300px; height: 400px;
-      background: white; border: 1px solid #ccc; border-radius: 8px;
-      z-index: 9999; padding: 15px; overflow-y: auto; font-size: 12px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    `;
-
-    // Get diagnostic report
-    if (this.services.diagnosticService) {
-      const report = await this.services.diagnosticService.createDiagnosticReport();
-      panel.innerHTML = `<pre>${report}</pre>`;
-    } else {
-      panel.innerHTML = '<p>Diagnostic service not available</p>';
-    }
-
-    document.body.appendChild(panel);
   }
 
   // Utility methods
@@ -1315,6 +1269,8 @@ class V3PopupCore {
   async showUserProfileView(userProfile) {
     await this.loadView('profile', () => {
       this.populateUserProfile(userProfile);
+      this.setupMenuDropdown();
+      this.setupNavigationHandlers();
     });
   }
 

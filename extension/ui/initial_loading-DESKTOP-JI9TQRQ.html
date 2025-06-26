@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8"/>
+<link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
+<link as="style" href="https://fonts.googleapis.com/css2?display=swap&amp;family=Inter:wght@400;500;600;700&amp;family=Noto+Sans:wght@400;500;700;900" onload="this.rel='stylesheet'" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+<title>Setting Up Profile</title>
+<link href="data:image/x-icon;base64," rel="icon" type="image/x-icon"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<style>
+    @keyframes smooth-progress {
+      from {
+        width: 5%;
+      }
+      to {
+        width: 99%;
+      }
+    }
+    .progress-animated {
+      animation: smooth-progress 4s ease-out forwards !important;
+    }
+    #progress-bar {
+      background-color: #0b80ee !important;
+      width: 5%;
+      transition: none;
+    }
+  </style>
+</head>
+<body class="bg-slate-50" style='font-family: Inter, "Noto Sans", sans-serif;'>
+<div class="relative flex size-full min-h-screen flex-col group/design-root overflow-x-hidden items-center justify-center">
+<div class="layout-container flex flex-col items-center justify-center bg-white shadow-lg rounded-xl" style="width: 400px; height: 564px;">
+<div class="layout-content-container flex flex-col w-full h-full items-center justify-center text-center p-10" role="status" aria-live="polite" aria-label="Setting up your profile, please wait.">
+<div class="mb-8" aria-hidden="true">
+<img alt="Cute loading animation" class="w-32 h-32 object-contain rounded-lg" src="https://i.imgur.com/zU3v0QV.gif" id="loading-gif"/>
+</div>
+<h2 class="text-slate-800 text-xl font-semibold leading-tight mb-4">Setting up your profile...</h2>
+<p class="text-slate-600 text-sm font-normal leading-relaxed mb-8">Scraping your LinkedIn profile to get started. This may take a few moments.</p>
+<div class="w-full h-3 rounded-full overflow-hidden" role="progressbar" aria-label="Setup progress" aria-valuemin="0" aria-valuemax="100">
+<div id="progress-bar" class="h-full rounded-full" style="width: 5%; background-color: #0b80ee;"></div>
+</div>
+</div>
+</div>
+</div>
+
+</body></html>

@@ -97,7 +97,10 @@ class AnalysisService {
       await this.saveAnalysisToHistory(this.currentAnalysis);
 
       console.log('AnalysisService: Analysis workflow completed successfully');
-      return result;
+      return {
+        success: true,
+        data: result
+      };
     } catch (error) {
       console.error('AnalysisService: Analysis workflow failed:', error);
 
@@ -120,7 +123,12 @@ class AnalysisService {
         await this.saveAnalysisToHistory(this.currentAnalysis);
       }
 
-      throw error;
+      // Return a standardized error object instead of throwing
+      return {
+        success: false,
+        error: error.message,
+        step: this.currentAnalysis?.status || 'unknown'
+      };
     }
   }
 
